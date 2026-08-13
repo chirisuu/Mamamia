@@ -30,12 +30,18 @@ desde el móvil.
   fecha estimada de liquidación. Incluye un simulador que compara **bola de nieve** contra
   **avalancha** con el pago extra que le quieras meter, y te dice cuánto ahorras en
   intereses con cada una.
+- **Me deben** — lo que le prestaste a otras personas: quién, cuánto, desde cuándo y para
+  qué fecha. Admite cobros parciales, marca los que se pasaron de fecha con los días de
+  retraso, y suma lo pendiente a tu patrimonio neto.
 - **Suscripciones** — coste normalizado a mensual y anual, próximos cobros, y detección de
   las que pagas pero no usas.
 - **Ahorro** — cuentas, fondo de emergencia en meses de gastos cubiertos, y metas con
   fecha estimada calculada sobre tu **ritmo real** de aportes, no sobre el que planeaste.
-- **Consejos** — 13 reglas que miran tus datos y te dicen qué está mal y qué hacer.
-  Si no hay datos suficientes, lo dice en vez de inventarse alarmas.
+- **Consejos** — 15 reglas que miran tus datos y te dicen qué está mal y qué hacer.
+  Las que sacan conclusiones del historial de gastos esperan a tener al menos cinco
+  movimientos registrados, y mientras tanto lo dicen en vez de inventarse alarmas. Las que
+  miran hechos que no dependen del historial —una deuda al 60%, un préstamo pasado de
+  fecha, una suscripción que no usas— avisan desde el primer día.
 
 ## Dónde están tus datos
 
@@ -79,13 +85,18 @@ paso de compilación. El código está dividido en secciones numeradas y comenta
 | §1 | Estado, persistencia en `localStorage`, exportar e importar |
 | §2 | Utilidades: formato de moneda y fechas, recurrencias |
 | §3 | Motor de cálculo: agregados mensuales, amortización, proyecciones |
-| §4 | Motor de consejos: las 13 reglas |
+| §4 | Motor de consejos: las 15 reglas |
 | §5 | Gráficos SVG escritos a mano |
 | §6 | Formularios y diálogo |
-| §7 | Las ocho vistas |
+| §7 | Las nueve vistas |
 | §8 | Integración opcional con la API de Claude |
 | §9 | Datos de ejemplo |
 | §10 | Render y eventos |
 
 Los cálculos de amortización están contrastados contra una tabla de amortización calculada
 aparte, y cada regla de consejos tiene un escenario que la dispara.
+
+**Al añadir una sección nueva**, basta con declararla en `estadoInicial()` y añadir su
+clave al bucle de `migrar()`. Esa función fusiona lo guardado con el estado inicial, así
+que una copia anterior que no conozca la sección nueva se completa con los valores por
+defecto en lugar de perder lo que ya traía.

@@ -200,7 +200,7 @@ table { border-collapse: collapse; width:100%; font-size:.87rem; }
 th, td { text-align:left; padding:.5rem .55rem; border-bottom:1px solid var(--linea); white-space:nowrap; }
 th { font-size:.74rem; text-transform:uppercase; letter-spacing:.04em; color:var(--tinta-3); font-weight:650; }
 td.n, th.n { text-align:right; font-variant-numeric: tabular-nums; }
-td.wrap { white-space: normal; min-width: 12rem; }
+td.wrap { white-space: normal; min-width: 8rem; }
 tbody tr:hover { background: var(--superficie-2); }
 .punto { display:inline-block; width:9px; height:9px; border-radius:99px; margin-right:.45rem; vertical-align:-1px; }
 
@@ -354,6 +354,7 @@ function estadoInicial() {
     movimientos: [],
     presupuestos: {},
     deudas: [],
+    prestamos: [],      // dinero que otras personas te deben a ti
     suscripciones: [],
     cuentas: [],
     metas: [],
@@ -366,15 +367,18 @@ let mesActual = null;          // "YYYY-MM"
 let filtros = { texto: "", tipo: "todos", categoria: "todas" };
 let simExtra = 0;              // pago extra mensual en el simulador de deudas
 
-/** Migra estados de versiones anteriores. Hoy solo existe la v1. */
+/**
+ * Normaliza un estado guardado. Fusiona con el estado inicial por clave, de modo
+ * que una copia anterior a la que le falte una sección se completa con los
+ * valores por defecto en lugar de romper la app o perder lo que sí traía.
+ */
 function migrar(datos) {
   if (!datos || typeof datos !== "object") return null;
   if (!datos.version) return null;
   const base = estadoInicial();
-  // Fusiona por clave para que un JSON antiguo al que le falte una sección no rompa la app.
   const out = { ...base, ...datos, version: ESQUEMA };
   out.ajustes = { ...base.ajustes, ...(datos.ajustes || {}) };
-  for (const k of ["categorias", "movimientos", "deudas", "suscripciones", "cuentas", "metas"]) {
+  for (const k of ["categorias", "movimientos", "deudas", "prestamos", "suscripciones", "cuentas", "metas"]) {
     if (!Array.isArray(out[k])) out[k] = base[k];
   }
   if (!out.presupuestos || typeof out.presupuestos !== "object") out.presupuestos = {};
@@ -613,6 +617,31 @@ const suscMensual   = () => suscActivas().reduce((a, s) => a + costeMensual(s), 
 
 const aportadoMeta = (m) => (m.aportes || []).reduce((a, x) => a + num(x.monto), 0);
 
+/* ---- Dinero que te deben a ti ---- */
+const cobradoDe   = (p) => (p.cobros || []).reduce((a, c) => a + num(c.monto), 0);
+const pendienteDe = (p) => Math.max(0, num(p.monto) - cobradoDe(p));
+const porCobrar   = () => S.prestamos.reduce((a, p) => a + pendienteDe(p), 0);
+
+/**
+ * Estado de un préstamo. `nivel` solo se rellena cuando hay algo que señalar:
+ * estar pendiente dentro de plazo no es ni bueno ni malo.
+ */
+function estadoPrestamo(p) {
+  if (pendienteDe(p) <= 0.005) return { clave: "cobrado", nivel: "bien", texto: "cobrado" };
+  if (p.fechaDevolucion) {
+    const retraso = -diasEntre(hoyISO(), p.fechaDevolucion);
+    if (retraso > 0) {
+      return {
+        clave: "vencido", retraso,
+        nivel: retraso > 60 ? "critico" : "grave",
+        texto: `${retraso} d de retraso`,
+      };
+    }
+  }
+  if (cobradoDe(p) > 0) return { clave: "parcial", nivel: null, texto: "cobrado en parte" };
+  return { clave: "pendiente", nivel: null, texto: "pendiente" };
+}
+
 /** Ritmo real de aporte a una meta: media mensual de los últimos 3 meses. */
 function ritmoMeta(m, mes) {
   const ventana = [mes, mesSuma(mes, -1), mesSuma(mes, -2)];
@@ -713,6 +742,7 @@ function agregados(mes) {
   const t = totalesMes(mes);
   const prev = totalesMes(mesSuma(mes, -1));
   const liq = ahorroLiquido();
+  const cobrar = porCobrar();
   const gMedio = gastoMedio(mes, 3) || t.gastos;
   return {
     mes,
@@ -724,9 +754,12 @@ function agregados(mes) {
     serie12: serieMeses(mes, 12),
     gastoMedio3: gMedio,
     ahorroLiquido: liq,
+    porCobrar: cobrar,
     deudaTotal: deudaTotal(),
     cuotasMes: cuotasMes(),
-    patrimonio: liq - deudaTotal(),
+    // Lo que te deben es un activo, pero uno que puede no volver: por eso el
+    // panel desglosa siempre los tres componentes en lugar de dar solo el total.
+    patrimonio: liq + cobrar - deudaTotal(),
     suscMensual: suscMensual(),
     suscAnual: suscMensual() * 12,
     mesesEmergencia: gMedio > 0 ? liq / gMedio : 0,
@@ -919,6 +952,40 @@ const REGLAS = [
     };
   },
 
+  function prestamoVencido(S, a) {
+    const vencidos = S.prestamos
+      .map((p) => ({ p, e: estadoPrestamo(p) }))
+      .filter((x) => x.e.clave === "vencido")
+      .sort((x, y) => pendienteDe(y.p) - pendienteDe(x.p));
+    if (!vencidos.length) return null;
+    const total = vencidos.reduce((a, x) => a + pendienteDe(x.p), 0);
+    const peor = vencidos[0];
+    return {
+      id: "prestamo-vencido", nivel: vencidos.some((x) => x.e.nivel === "critico") ? "grave" : "aviso",
+      impacto: total,
+      titulo: vencidos.length === 1
+        ? `${peor.p.persona} te debe ${money(pendienteDe(peor.p))} desde hace ${peor.e.retraso} días`
+        : `${vencidos.length} préstamos pasados de fecha: ${money(total)}`,
+      detalle: vencidos.slice(0, 3)
+        .map((x) => `${x.p.persona}: ${money(pendienteDe(x.p))}, ${x.e.retraso} días de retraso`)
+        .join(" · "),
+      accion: `Ese dinero es tuyo y está parado. Escríbeles hoy${
+        peor.p.persona ? ` — empieza por <b>${esc(peor.p.persona)}</b>` : ""}.`,
+    };
+  },
+
+  function dineroPrestadoAlto(S, a) {
+    if (a.porCobrar <= 0 || a.ahorroLiquido <= 0) return null;
+    const ratio = a.porCobrar / (a.ahorroLiquido + a.porCobrar);
+    if (ratio < 0.3) return null;
+    return {
+      id: "prestado-alto", nivel: "aviso", impacto: a.porCobrar,
+      titulo: `El ${pct(ratio)} de tu dinero está prestado`,
+      detalle: `Tienes ${money(a.porCobrar)} en manos de otras personas y ${money(a.ahorroLiquido)} disponibles de verdad. Si mañana necesitas efectivo, solo cuentas con lo segundo.`,
+      accion: `Antes de prestar más, mira si tu fondo de emergencia aguanta sin ese dinero.`,
+    };
+  },
+
   function metaEnRiesgo(S, a) {
     const riesgos = [];
     for (const m of S.metas) {
@@ -954,6 +1021,18 @@ const REGLAS = [
 ];
 
 /**
+ * Reglas que sacan conclusiones del historial de movimientos: sin unos cuantos
+ * meses registrados dirían tonterías, así que se callan hasta tener con qué.
+ * Las demás miran hechos que no dependen del historial —una deuda al 60%, un
+ * préstamo pasado de fecha— y esas se dicen siempre.
+ */
+const NECESITAN_HISTORIAL = new Set([
+  "flujoNegativo", "tasaAhorroBaja", "sinFondoEmergencia", "ratioDeudaAlto",
+  "suscripcionesPesadas", "presupuestoExcedido", "gastoHormiga",
+  "desviacion503020", "picoCategoria",
+]);
+
+/**
  * Cierre positivo. No es una regla más: solo se añade cuando ninguna otra
  * encontró nada, para no decir "todo bien" junto a un aviso crítico.
  */
@@ -970,18 +1049,11 @@ function todoEnOrden(a) {
 /** Devuelve los hallazgos ordenados por severidad y luego por impacto en soles. */
 function consejos(mes) {
   const a = agregados(mes);
-
-  if (a.nMovs < 5) {
-    return [{
-      id: "datos-insuficientes", nivel: "bien", impacto: 0,
-      titulo: "Aún no tengo datos suficientes para aconsejarte",
-      detalle: `Llevas ${a.nMovs} movimiento${a.nMovs === 1 ? "" : "s"} registrado${a.nMovs === 1 ? "" : "s"}. Con al menos 5 empiezo a analizar tus gastos, y con un par de meses las conclusiones ya son fiables.`,
-      accion: `Registra tus ingresos y gastos en <b>Movimientos</b>, o carga los datos de ejemplo desde <b>Ajustes</b> para ver cómo funciona.`,
-    }];
-  }
+  const hayHistorial = a.nMovs >= 5;
 
   const out = [];
   for (const regla of REGLAS) {
+    if (!hayHistorial && NECESITAN_HISTORIAL.has(regla.name)) continue;
     try {
       const h = regla(S, a);
       if (h) out.push(h);
@@ -989,6 +1061,17 @@ function consejos(mes) {
       console.error("Regla fallida:", regla.name, e);
     }
   }
+
+  if (!hayHistorial) {
+    out.push({
+      id: "datos-insuficientes", nivel: "bien", impacto: 0,
+      titulo: "Aún no puedo analizar tus gastos",
+      detalle: `Llevas ${a.nMovs} movimiento${a.nMovs === 1 ? "" : "s"} registrado${a.nMovs === 1 ? "" : "s"}. Con al menos 5 empiezo a mirar en qué se te va el dinero, y con un par de meses las comparaciones ya son fiables. Lo que sí puedo señalarte desde el primer día es lo que no depende del historial: deudas caras, préstamos pasados de fecha o suscripciones que no usas.`,
+      accion: `Registra tus ingresos y gastos en <b>Movimientos</b>, o carga los datos de ejemplo desde <b>Ajustes</b> para ver cómo funciona.`,
+    });
+    return out.sort((x, y) => (PESO[y.nivel] - PESO[x.nivel]) || (y.impacto - x.impacto));
+  }
+
   if (!out.length) {
     const ok = todoEnOrden(a);
     if (ok) out.push(ok);
@@ -1421,6 +1504,65 @@ function formSuscripcion(id) {
   });
 }
 
+function formPrestamo(id) {
+  const p = S.prestamos.find((x) => x.id === id);
+  abrirForm({
+    titulo: p ? "Editar préstamo" : "Nuevo préstamo",
+    intro: "Dinero que le prestaste a alguien y esperas recuperar.",
+    campos: [
+      { k: "persona", lab: "¿A quién?", tipo: "texto", req: true },
+      { k: "monto", lab: "Monto prestado (S/)", tipo: "numero", req: true },
+      { k: "fecha", lab: "Cuándo se lo prestaste", tipo: "fecha", req: true, valor: hoyISO() },
+      { k: "fechaDevolucion", lab: "Cuándo te lo devuelve", tipo: "fecha", ayuda: "Opcional, pero sin fecha no puedo avisarte de retrasos" },
+      { k: "concepto", lab: "Concepto", tipo: "texto", ayuda: "Para qué era" },
+      { k: "nota", lab: "Nota", tipo: "texto" },
+    ],
+    valores: p || {},
+    onGuardar(v) {
+      if (v.monto <= 0) return toast("El monto tiene que ser mayor que cero.");
+      commit((S) => {
+        if (p) Object.assign(p, v);
+        else S.prestamos.push({ id: uid(), cobros: [], ...v });
+      });
+      dlg.close();
+    },
+  });
+}
+
+function formCobro(prestamoId) {
+  const p = S.prestamos.find((x) => x.id === prestamoId);
+  if (!p) return;
+  const pend = pendienteDe(p);
+  abrirForm({
+    titulo: `Registrar cobro de ${p.persona}`,
+    intro: `Pendiente ahora mismo: <b>${esc(money(pend))}</b>.`,
+    campos: [
+      { k: "fecha", lab: "Fecha", tipo: "fecha", req: true, valor: hoyISO() },
+      { k: "monto", lab: "Monto cobrado (S/)", tipo: "numero", req: true, valor: pend.toFixed(2) },
+      { k: "comoIngreso", lab: "Registrarlo también como ingreso del mes", tipo: "check" },
+    ],
+    onGuardar(v) {
+      if (v.monto <= 0) return toast("El monto tiene que ser mayor que cero.");
+      if (v.monto > pend + 0.005) return toast(`No puedes cobrar más de lo pendiente (${money(pend)}).`);
+      commit((S) => {
+        (p.cobros ||= []).push({ id: uid(), fecha: v.fecha, monto: v.monto });
+        if (v.comoIngreso) {
+          const c = S.categorias.find((x) => x.tipo === "ingreso" && x.nombre === "Otros ingresos")
+                 || S.categorias.find((x) => x.tipo === "ingreso");
+          S.movimientos.push({
+            id: uid(), fecha: v.fecha, tipo: "ingreso", monto: v.monto,
+            categoriaId: c?.id, cuenta: "", recurrencia: "ninguna",
+            nota: `Devolución de ${p.persona}`,
+          });
+          S.movimientos.sort((a, b) => b.fecha.localeCompare(a.fecha));
+        }
+      });
+      dlg.close();
+      toast(v.comoIngreso ? "Cobro y ingreso registrados." : "Cobro registrado.");
+    },
+  });
+}
+
 function formCuenta(id) {
   const c = S.cuentas.find((x) => x.id === id);
   abrirForm({
@@ -1485,8 +1627,8 @@ function borrar(coleccion, id, etiqueta) {
 
 const TABS = [
   ["panel", "Panel"], ["movimientos", "Movimientos"], ["presupuestos", "Presupuestos"],
-  ["deudas", "Deudas"], ["suscripciones", "Suscripciones"], ["ahorro", "Ahorro"],
-  ["consejos", "Consejos"], ["ajustes", "Ajustes"],
+  ["deudas", "Deudas"], ["porcobrar", "Me deben"], ["suscripciones", "Suscripciones"],
+  ["ahorro", "Ahorro"], ["consejos", "Consejos"], ["ajustes", "Ajustes"],
 ];
 
 function kpi(lab, val, delta) {
@@ -1531,7 +1673,8 @@ function vistaPanel() {
     ${kpi("Tasa de ahorro", a.ingresos > 0 ? pct(a.tasaAhorro) : "—",
       `<div class="delta">${a.ingresos > 0 ? (a.tasaAhorro >= 0.2 ? "por encima del 20%" : a.tasaAhorro >= 0.1 ? "aceptable" : "por debajo del 10%") : "sin ingresos este mes"}</div>`)}
     ${kpi("Patrimonio neto", money0(a.patrimonio),
-      `<div class="delta">${esc(money0(a.ahorroLiquido))} ahorro − ${esc(money0(a.deudaTotal))} deuda</div>`)}
+      `<div class="delta">${esc(money0(a.ahorroLiquido))} ahorro${
+        a.porCobrar > 0 ? ` + ${esc(money0(a.porCobrar))} por cobrar` : ""} − ${esc(money0(a.deudaTotal))} deuda</div>`)}
   </div>
 
   <div class="card">
@@ -1579,6 +1722,13 @@ function proximosEventos(dias) {
     if (!f) continue;
     const d = diasEntre(hoy, f);
     if (d >= 0 && d <= dias) out.push({ fecha: f, dias: d, nombre: s.nombre, tipo: "Suscripción", monto: num(s.monto) });
+  }
+  for (const p of S.prestamos) {
+    if (!p.fechaDevolucion || pendienteDe(p) <= 0.005) continue;
+    const d = diasEntre(hoy, p.fechaDevolucion);
+    if (d >= 0 && d <= dias) {
+      out.push({ fecha: p.fechaDevolucion, dias: d, nombre: `${p.persona} te devuelve`, tipo: "Te deben", monto: pendienteDe(p) });
+    }
   }
   for (const d of S.deudas) {
     if (num(d.saldo) <= 0 || num(d.cuota) <= 0) continue;
@@ -1906,6 +2056,75 @@ function vistaSuscripciones() {
   </div>`;
 }
 
+/* ---------- Me deben ---------- */
+function vistaPorCobrar() {
+  const a = agregados(mesActual);
+  const conEstado = S.prestamos
+    .map((p) => ({ p, e: estadoPrestamo(p), pend: pendienteDe(p), cobrado: cobradoDe(p) }))
+    .sort((x, y) => {
+      const orden = { vencido: 0, parcial: 1, pendiente: 2, cobrado: 3 };
+      return (orden[x.e.clave] - orden[y.e.clave]) || (y.pend - x.pend);
+    });
+
+  const abiertos = conEstado.filter((x) => x.e.clave !== "cobrado");
+  const vencidos = conEstado.filter((x) => x.e.clave === "vencido");
+  const prestadoTotal = S.prestamos.reduce((s, p) => s + num(p.monto), 0);
+  const recuperado = S.prestamos.reduce((s, p) => s + cobradoDe(p), 0);
+
+  return `
+  <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
+    ${kpi("Te deben", money0(a.porCobrar),
+      `<div class="delta">${abiertos.length} préstamo${abiertos.length === 1 ? "" : "s"} abierto${abiertos.length === 1 ? "" : "s"}</div>`)}
+    ${kpi("Pasado de fecha", money0(vencidos.reduce((s, x) => s + x.pend, 0)),
+      `<div class="delta${vencidos.length ? " down" : ""}">${vencidos.length
+        ? `${vencidos.length} con retraso` : "nada con retraso"}</div>`)}
+    ${kpi("Ya recuperado", money0(recuperado),
+      `<div class="delta">${prestadoTotal > 0 ? esc(pct(recuperado / prestadoTotal)) + " de lo prestado" : "—"}</div>`)}
+  </div>
+
+  <div class="card">
+    <div class="card-cab"><h2 class="crece">Quién te debe</h2>
+      <button class="btn pri" data-act="nuevo-prestamo">+ Nuevo préstamo</button></div>
+    ${abiertos.length
+      ? grafico((w) => grBarrasRank(w, {
+          datos: abiertos.map((x) => ({ etiqueta: x.p.persona, valor: x.pend })).sort((m, n) => n.valor - m.valor),
+        }))
+      : `<p class="vacio">Nadie te debe nada ahora mismo. Que dure.</p>`}
+  </div>
+
+  <div class="card">
+    ${conEstado.length ? `<div class="tabla-wrap"><table>
+      <thead><tr><th>Persona</th><th>Concepto</th><th class="n">Prestado</th><th class="n">Cobrado</th>
+        <th class="n">Pendiente</th><th>Desde</th><th>Devuelve</th><th>Estado</th><th></th></tr></thead>
+      <tbody>${conEstado.map(({ p, e, pend, cobrado }) => `<tr>
+        <td>${esc(p.persona)}</td>
+        <td class="sub wrap">${esc(p.concepto || "—")}</td>
+        <td class="n">${esc(money(num(p.monto)))}</td>
+        <td class="n sub">${cobrado > 0 ? esc(money(cobrado)) : "—"}</td>
+        <td class="n"><b>${esc(money(pend))}</b></td>
+        <td class="sub">${esc(fechaCorta(p.fecha))}</td>
+        <td class="sub">${p.fechaDevolucion ? esc(fechaCorta(p.fechaDevolucion)) : "sin fecha"}</td>
+        <td>${e.nivel ? insignia(e.nivel, e.texto) : `<span class="sub">${esc(e.texto)}</span>`}</td>
+        <td class="n">
+          ${pend > 0.005 ? `<button class="btn mini pri" data-act="cobro" data-id="${p.id}">Cobré</button>` : ""}
+          <button class="btn mini" data-act="edit-prestamo" data-id="${p.id}">Editar</button>
+          <button class="btn mini peligro" data-act="del-prestamo" data-id="${p.id}">Borrar</button></td>
+      </tr>`).join("")}</tbody></table></div>`
+      : `<p class="vacio">Apunta aquí lo que le prestes a alguien: quién, cuánto y para cuándo te lo devuelve.</p>`}
+    ${conEstado.some((x) => x.cobrado > 0) ? `
+    <details class="datos" style="margin-top:.8rem"><summary>Ver los cobros registrados</summary>
+      <div class="tabla-wrap" style="margin-top:.5rem"><table>
+        <thead><tr><th>Fecha</th><th>Persona</th><th class="n">Monto</th></tr></thead>
+        <tbody>${S.prestamos.flatMap((p) => (p.cobros || []).map((c) => ({ p, c })))
+          .sort((x, y) => y.c.fecha.localeCompare(x.c.fecha))
+          .map(({ p, c }) => `<tr><td>${esc(fechaCorta(c.fecha))}</td><td>${esc(p.persona)}</td>
+            <td class="n">${esc(money(num(c.monto)))}</td></tr>`).join("")}</tbody>
+      </table></div></details>` : ""}
+    <p class="nota" style="margin-top:.8rem">Registrar un cobro aquí baja lo pendiente, pero <b>no</b> cuenta como ingreso del mes
+      salvo que marques la casilla al hacerlo. Así no se duplica si ya lo habías apuntado en Movimientos.</p>
+  </div>`;
+}
+
 /* ---------- Ahorro y metas ---------- */
 function vistaAhorro() {
   const a = agregados(mesActual);
@@ -2029,7 +2248,8 @@ function vistaAjustes() {
     </div>
     <input type="file" accept="application/json,.json" id="file-import" class="oculto">
     <p class="sub" style="margin-top:.8rem">Ahora mismo: ${S.movimientos.length} movimientos · ${S.deudas.length} deudas ·
-      ${S.suscripciones.length} suscripciones · ${S.cuentas.length} cuentas · ${S.metas.length} metas.</p>
+      ${S.prestamos.length} préstamos a otros · ${S.suscripciones.length} suscripciones ·
+      ${S.cuentas.length} cuentas · ${S.metas.length} metas.</p>
   </div>
 
   <div class="card">
@@ -2081,6 +2301,16 @@ function resumenParaIA(mes) {
       teaPorcentaje: num(d.tea), cuotaMensual: round2(num(d.cuota)),
     })),
     cuotasDeudaAlMes: round2(a.cuotasMes),
+    dineroQueLeDeben: S.prestamos.filter((p) => pendienteDe(p) > 0.005).map((p) => {
+      const e = estadoPrestamo(p);
+      return {
+        persona: p.persona, concepto: p.concepto || null,
+        pendiente: round2(pendienteDe(p)),
+        fechaAcordadaDeDevolucion: p.fechaDevolucion || null,
+        diasDeRetraso: e.clave === "vencido" ? e.retraso : 0,
+      };
+    }),
+    totalQueLeDeben: round2(a.porCobrar),
     suscripciones: S.suscripciones.map((s) => ({
       nombre: s.nombre, costeAnual: round2(costeAnual(s)),
       activa: s.activa !== false, laUsa: s.usada !== false,
@@ -2273,6 +2503,17 @@ function datosEjemplo() {
     { id: uid(), nombre: "Efectivo", saldo: 400 },
   ];
 
+  e.prestamos = [
+    { id: uid(), persona: "Carlos", concepto: "Se le malogró la moto", monto: 800,
+      fecha: enDias(-95), fechaDevolucion: enDias(-35), cobros: [{ id: uid(), fecha: enDias(-40), monto: 200 }] },
+    { id: uid(), persona: "Rosa", concepto: "Matrícula de su hija", monto: 1200,
+      fecha: enDias(-20), fechaDevolucion: enDias(12), cobros: [] },
+    { id: uid(), persona: "Diego", concepto: "Almuerzo y taxi", monto: 60,
+      fecha: enDias(-8), fechaDevolucion: "", cobros: [] },
+    { id: uid(), persona: "Tía Marta", concepto: "Préstamo devuelto completo", monto: 500,
+      fecha: enDias(-150), fechaDevolucion: enDias(-90), cobros: [{ id: uid(), fecha: enDias(-92), monto: 500 }] },
+  ];
+
   const enMeses = (n) => {
     const d = new Date(hoy.getFullYear(), hoy.getMonth() + n, 1);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
@@ -2305,7 +2546,7 @@ function pintarTabs() {
 
 const VISTAS = {
   panel: vistaPanel, movimientos: vistaMovimientos, presupuestos: vistaPresupuestos,
-  deudas: vistaDeudas, suscripciones: vistaSuscripciones, ahorro: vistaAhorro,
+  deudas: vistaDeudas, porcobrar: vistaPorCobrar, suscripciones: vistaSuscripciones, ahorro: vistaAhorro,
   consejos: vistaConsejos, ajustes: vistaAjustes,
 };
 
@@ -2352,6 +2593,11 @@ document.addEventListener("click", (ev) => {
     case "nueva-deuda": return formDeuda(null);
     case "edit-deuda":  return formDeuda(id);
     case "del-deuda":   return borrar("deudas", id, "esta deuda");
+
+    case "nuevo-prestamo": return formPrestamo(null);
+    case "edit-prestamo":  return formPrestamo(id);
+    case "del-prestamo":   return borrar("prestamos", id, "este préstamo y sus cobros");
+    case "cobro":          return formCobro(id);
 
     case "nueva-susc":  return formSuscripcion(null);
     case "edit-susc":   return formSuscripcion(id);
