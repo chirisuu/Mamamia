@@ -5,6 +5,9 @@ suscripciones y ahorro, con gráficos y consejos automáticos sobre tus propios 
 
 Sin instalación, sin servidor, sin cuenta. Moneda: soles peruanos (S/).
 
+> En este repo también vive **MiCoach**, una app de dieta y entrenamiento con la misma idea de
+> un solo archivo: está en [`micoach/`](micoach/README.md).
+
 ## Cómo usarlo
 
 Descarga `index.html` y ábrelo con doble clic. Ya está.

@@ -1,6 +1,8 @@
-# Copias exportadas desde la app: contienen tus movimientos, deudas y metas.
+# Copias exportadas desde las apps: contienen tus movimientos, deudas y metas,
+# o tu peso, comidas y entrenos.
 # Este repositorio es público, así que aquí no entran.
 mamamia-*.json
+micoach-*.json
 *.backup.json
 copia*.json
 respaldo*.json
