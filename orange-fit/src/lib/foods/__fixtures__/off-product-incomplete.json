@@ -1,0 +1,17 @@
+{
+  "code": "7750182002350",
+  "product": {
+    "brands": "Inca Kola",
+    "code": "7750182002350",
+    "nutriments": {
+      "energy-kcal_serving": 120,
+      "sugars_serving": 30,
+      "carbohydrates_serving": 30
+    },
+    "product_name": "Inca Kola",
+    "quantity": "500 ml",
+    "serving_size": "250 ml"
+  },
+  "status": 1,
+  "status_verbose": "product found"
+}

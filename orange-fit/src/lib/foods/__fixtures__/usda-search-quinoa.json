@@ -1,0 +1,31 @@
+{
+  "totalHits": 2,
+  "currentPage": 1,
+  "totalPages": 1,
+  "pageList": [1],
+  "foodSearchCriteria": { "query": "quinoa", "dataType": ["Foundation", "SR Legacy"], "pageSize": 2 },
+  "foods": [
+    {
+      "fdcId": 168917,
+      "description": "Quinoa, cooked",
+      "dataType": "SR Legacy",
+      "publishedDate": "2019-04-01",
+      "foodCategory": "Cereal Grains and Pasta",
+      "foodNutrients": [
+        { "nutrientId": 1003, "nutrientName": "Protein", "nutrientNumber": "203", "unitName": "G", "value": 4.4 },
+        { "nutrientId": 1004, "nutrientName": "Total lipid (fat)", "nutrientNumber": "204", "unitName": "G", "value": 1.92 },
+        { "nutrientId": 1005, "nutrientName": "Carbohydrate, by difference", "nutrientNumber": "205", "unitName": "G", "value": 21.3 },
+        { "nutrientId": 1008, "nutrientName": "Energy", "nutrientNumber": "208", "unitName": "KCAL", "value": 120 }
+      ]
+    },
+    {
+      "fdcId": 168874,
+      "description": "Quinoa, uncooked",
+      "dataType": "SR Legacy",
+      "foodNutrients": [
+        { "nutrientId": 1003, "nutrientName": "Protein", "nutrientNumber": "203", "unitName": "G", "value": 14.1 },
+        { "nutrientId": 1008, "nutrientName": "Energy", "nutrientNumber": "208", "unitName": "KCAL", "value": 368 }
+      ]
+    }
+  ]
+}

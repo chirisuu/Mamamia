@@ -1,0 +1,82 @@
+[
+  {
+    "fdcId": 168917,
+    "description": "Quinoa, cooked",
+    "dataType": "SR Legacy",
+    "publicationDate": "4/1/2019",
+    "foodCategory": { "id": 20, "code": "2000", "description": "Cereal Grains and Pasta" },
+    "foodNutrients": [
+      { "type": "FoodNutrient", "id": 1283672, "nutrient": { "id": 1008, "number": "208", "name": "Energy", "rank": 300, "unitName": "kcal" }, "amount": 120 },
+      { "type": "FoodNutrient", "id": 1283673, "nutrient": { "id": 1062, "number": "268", "name": "Energy", "rank": 400, "unitName": "kJ" }, "amount": 503 },
+      { "type": "FoodNutrient", "id": 1283676, "nutrient": { "id": 1003, "number": "203", "name": "Protein", "rank": 600, "unitName": "g" }, "amount": 4.4 },
+      { "type": "FoodNutrient", "id": 1283677, "nutrient": { "id": 1004, "number": "204", "name": "Total lipid (fat)", "rank": 800, "unitName": "g" }, "amount": 1.92 },
+      { "type": "FoodNutrient", "id": 1283679, "nutrient": { "id": 1005, "number": "205", "name": "Carbohydrate, by difference", "rank": 1110, "unitName": "g" }, "amount": 21.3 },
+      { "type": "FoodNutrient", "id": 1283680, "nutrient": { "id": 1079, "number": "291", "name": "Fiber, total dietary", "rank": 1200, "unitName": "g" }, "amount": 2.8 },
+      { "type": "FoodNutrient", "id": 1283681, "nutrient": { "id": 2000, "number": "269", "name": "Sugars, total including NLEA", "rank": 1510, "unitName": "g" }, "amount": 0.87 },
+      { "type": "FoodNutrient", "id": 1283690, "nutrient": { "id": 1087, "number": "301", "name": "Calcium, Ca", "rank": 5300, "unitName": "mg" }, "amount": 17 },
+      { "type": "FoodNutrient", "id": 1283691, "nutrient": { "id": 1089, "number": "303", "name": "Iron, Fe", "rank": 5400, "unitName": "mg" }, "amount": 1.49 },
+      { "type": "FoodNutrient", "id": 1283692, "nutrient": { "id": 1090, "number": "304", "name": "Magnesium, Mg", "rank": 5500, "unitName": "mg" }, "amount": 64 },
+      { "type": "FoodNutrient", "id": 1283693, "nutrient": { "id": 1091, "number": "305", "name": "Phosphorus, P", "rank": 5600, "unitName": "mg" }, "amount": 152 },
+      { "type": "FoodNutrient", "id": 1283694, "nutrient": { "id": 1092, "number": "306", "name": "Potassium, K", "rank": 5700, "unitName": "mg" }, "amount": 172 },
+      { "type": "FoodNutrient", "id": 1283695, "nutrient": { "id": 1093, "number": "307", "name": "Sodium, Na", "rank": 5800, "unitName": "mg" }, "amount": 7 },
+      { "type": "FoodNutrient", "id": 1283696, "nutrient": { "id": 1095, "number": "309", "name": "Zinc, Zn", "rank": 5900, "unitName": "mg" }, "amount": 1.09 },
+      { "type": "FoodNutrient", "id": 1283699, "nutrient": { "id": 1103, "number": "317", "name": "Selenium, Se", "rank": 6200, "unitName": "µg" }, "amount": 2.8 },
+      { "type": "FoodNutrient", "id": 1283700, "nutrient": { "id": 1162, "number": "401", "name": "Vitamin C, total ascorbic acid", "rank": 6300, "unitName": "mg" }, "amount": 0 },
+      { "type": "FoodNutrient", "id": 1283701, "nutrient": { "id": 1165, "number": "404", "name": "Thiamin", "rank": 6400, "unitName": "mg" }, "amount": 0.107 },
+      { "type": "FoodNutrient", "id": 1283710, "nutrient": { "id": 1190, "number": "435", "name": "Folate, DFE", "rank": 6800, "unitName": "µg" }, "amount": 42 },
+      { "type": "FoodNutrient", "id": 1283711, "nutrient": { "id": 1104, "number": "318", "name": "Vitamin A, IU", "rank": 7500, "unitName": "IU" }, "amount": 5 },
+      { "type": "FoodNutrient", "id": 1283712, "nutrient": { "id": 1258, "number": "606", "name": "Fatty acids, total saturated", "rank": 9700, "unitName": "g" }, "amount": 0.231 },
+      { "type": "FoodNutrient", "id": 1283713, "nutrient": { "id": 1253, "number": "601", "name": "Cholesterol", "rank": 15700, "unitName": "mg" }, "amount": 0 }
+    ],
+    "foodPortions": [
+      { "id": 85467, "measureUnit": { "id": 9999, "name": "undetermined", "abbreviation": "undetermined" }, "modifier": "cup", "gramWeight": 185, "sequenceNumber": 1, "amount": 1 }
+    ]
+  },
+  {
+    "fdcId": 321358,
+    "description": "Hummus, commercial",
+    "dataType": "Foundation",
+    "foodNutrients": [
+      { "type": "FoodNutrient", "nutrient": { "id": 2047, "number": "957", "name": "Energy (Atwater General Factors)", "unitName": "kcal" }, "amount": 229 },
+      { "type": "FoodNutrient", "nutrient": { "id": 1003, "number": "203", "name": "Protein", "unitName": "g" }, "amount": 7.35 },
+      { "type": "FoodNutrient", "nutrient": { "id": 1004, "number": "204", "name": "Total lipid (fat)", "unitName": "g" }, "amount": 17.1 },
+      { "type": "FoodNutrient", "nutrient": { "id": 1005, "number": "205", "name": "Carbohydrate, by difference", "unitName": "g" }, "amount": 14.9 },
+      { "type": "FoodNutrient", "nutrient": { "id": 1079, "number": "291", "name": "Fiber, total dietary", "unitName": "g" }, "amount": 5.4 },
+      { "type": "FoodNutrient", "nutrient": { "id": 1093, "number": "307", "name": "Sodium, Na", "unitName": "mg" }, "amount": 426 },
+      { "type": "FoodNutrient", "nutrient": { "id": 1089, "number": "303", "name": "Iron, Fe", "unitName": "mg" }, "amount": 2.41 }
+    ],
+    "foodPortions": [
+      { "id": 120001, "measureUnit": { "id": 1001, "name": "tablespoon", "abbreviation": "tbsp" }, "modifier": "", "gramWeight": 15, "sequenceNumber": 1, "amount": 1, "portionDescription": "1 tablespoon" },
+      { "id": 120002, "measureUnit": { "id": 9999, "name": "undetermined", "abbreviation": "undetermined" }, "gramWeight": 100, "sequenceNumber": 2, "amount": 1, "portionDescription": "Quantity not specified" }
+    ]
+  },
+  {
+    "fdcId": 2021234,
+    "description": "GREEK STRAINED YOGURT, PLAIN",
+    "dataType": "Branded",
+    "brandOwner": "FAGE USA DAIRY INDUSTRY INC.",
+    "brandName": "FAGE",
+    "gtinUpc": "689544001010",
+    "servingSize": 170,
+    "servingSizeUnit": "g",
+    "householdServingFullText": "1 container",
+    "foodNutrients": [
+      { "type": "FoodNutrient", "nutrient": { "id": 1008, "number": "208", "name": "Energy", "unitName": "kcal" }, "amount": 53 },
+      { "type": "FoodNutrient", "nutrient": { "id": 1003, "number": "203", "name": "Protein", "unitName": "g" }, "amount": 10.6 },
+      { "type": "FoodNutrient", "nutrient": { "id": 1004, "number": "204", "name": "Total lipid (fat)", "unitName": "g" }, "amount": 0 },
+      { "type": "FoodNutrient", "nutrient": { "id": 1005, "number": "205", "name": "Carbohydrate, by difference", "unitName": "g" }, "amount": 3.53 },
+      { "type": "FoodNutrient", "nutrient": { "id": 2000, "number": "269", "name": "Sugars, total including NLEA", "unitName": "g" }, "amount": 3.53 },
+      { "type": "FoodNutrient", "nutrient": { "id": 1093, "number": "307", "name": "Sodium, Na", "unitName": "mg" }, "amount": 38 },
+      { "type": "FoodNutrient", "nutrient": { "id": 1087, "number": "301", "name": "Calcium, Ca", "unitName": "mg" }, "amount": 118 }
+    ]
+  },
+  {
+    "fdcId": 999001,
+    "description": "Registro incompleto de prueba (sin proteína)",
+    "dataType": "SR Legacy",
+    "foodNutrients": [
+      { "type": "FoodNutrient", "nutrient": { "id": 1008, "number": "208", "name": "Energy", "unitName": "kcal" }, "amount": 50 },
+      { "type": "FoodNutrient", "nutrient": { "id": 1005, "number": "205", "name": "Carbohydrate, by difference", "unitName": "g" }, "amount": 12 }
+    ]
+  }
+]
