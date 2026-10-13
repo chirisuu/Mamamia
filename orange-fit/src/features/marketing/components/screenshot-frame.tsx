@@ -40,7 +40,7 @@ export function ScreenshotFrame({ shot, available, priority = false, className }
             className="block h-full w-full object-cover object-top"
           />
         ) : (
-          <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
+          <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center text-foreground">
             <Smartphone className="size-8 text-muted-foreground" aria-hidden="true" />
             <p className="text-sm font-medium">Captura en preparación</p>
             <p className="text-xs leading-relaxed text-muted-foreground">{alt}</p>

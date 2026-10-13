@@ -100,7 +100,7 @@ function InPreparation({ slug, appName, supportEmail }: { slug: LegalSlug; appNa
         {supportEmail ? (
           <p className="leading-relaxed text-muted-foreground">
             Si tienes preguntas sobre cómo tratamos tus datos, escríbenos a{" "}
-            <a href={`mailto:${supportEmail}`} className="break-all font-medium text-primary-strong underline underline-offset-4">
+            <a href={`mailto:${supportEmail}`} className="break-words font-medium text-primary-strong underline underline-offset-4">
               {supportEmail}
             </a>
             .

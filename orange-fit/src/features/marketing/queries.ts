@@ -65,6 +65,26 @@ export async function getLegalDocument(slug: LegalSlug): Promise<LegalDocument> 
   }
 }
 
+/**
+ * Slugs legales publicados (para el sitemap). null si no se pudo leer: en ese caso el sitemap
+ * incluye todos (las páginas existen igual y cada una decide su `noindex`).
+ */
+export async function getPublishedLegalSlugs(): Promise<string[] | null> {
+  if (!isSupabaseConfigured()) return null;
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase
+      .from("content_pages")
+      .select("slug, body_md")
+      .eq("kind", "legal")
+      .eq("status", "published");
+    if (error) return null;
+    return (data ?? []).filter((row) => row.body_md.trim()).map((row) => row.slug);
+  } catch {
+    return null;
+  }
+}
+
 export type PricingSummary = {
   view: CatalogView;
   /** Funciones (claves de `plans.features`) de cada plan, para las etiquetas Gratis/Premium. */

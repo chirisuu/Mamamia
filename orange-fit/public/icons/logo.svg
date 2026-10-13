@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" fill="none">
+  <!--
+    Marca propia (equivalente a src/components/brand/logo.tsx): anillo de progreso naranja casi
+    cerrado y un punto en el hueco. Centro 24, radio 17, trazo 7. El punto es carbón en tema claro y
+    blanco suave en oscuro (favicon SVG). scripts/generate-icons.mjs lee la geometría de este archivo.
+  -->
+  <style>
+    .of-dot { fill: #17181c; }
+    @media (prefers-color-scheme: dark) { .of-dot { fill: #f7f8fa; } }
+  </style>
+  <path data-part="ring" d="M38.42 14.99 A17 17 0 1 1 18.75 7.83" stroke="#ff6b00" stroke-width="7" stroke-linecap="round" />
+  <circle data-part="dot" class="of-dot" cx="29.81" cy="8.03" r="4.2" fill="#17181c" />
+</svg>

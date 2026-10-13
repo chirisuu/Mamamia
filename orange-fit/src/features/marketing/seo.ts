@@ -53,8 +53,15 @@ export function absoluteUrl(baseUrl: string, path: string): string {
   return path === "/" ? `${base}/` : `${base}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
-export function buildSitemap(baseUrl: string, lastModified: Date = new Date()): MetadataRoute.Sitemap {
-  return PUBLIC_ROUTES.map((route) => ({
+/**
+ * Sitemap de las rutas públicas. `exclude` quita rutas que hoy no deben indexarse (p. ej. un legal
+ * que sigue en preparación y lleva `noindex`).
+ */
+export function buildSitemap(
+  baseUrl: string,
+  { lastModified = new Date(), exclude = [] }: { lastModified?: Date; exclude?: readonly string[] } = {},
+): MetadataRoute.Sitemap {
+  return PUBLIC_ROUTES.filter((route) => !exclude.includes(route.path)).map((route) => ({
     url: absoluteUrl(baseUrl, route.path),
     lastModified,
     changeFrequency: route.changeFrequency,
@@ -167,6 +174,6 @@ export function serializeJsonLd(data: unknown): string {
     .replace(/</g, "\\u003c")
     .replace(/>/g, "\\u003e")
     .replace(/&/g, "\\u0026")
-    .replace(/ /g, "\\u2028")
-    .replace(/ /g, "\\u2029");
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");
 }

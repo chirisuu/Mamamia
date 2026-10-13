@@ -200,11 +200,11 @@ export default async function LandingPage({ searchParams }: PageProps) {
                 },
                 {
                   title: "Las calorías no las inventa la IA",
-                  text: "La IA solo identifica el alimento y la porción. Calorías y macros se calculan con nuestra base de alimentos (USDA FoodData Central, Open Food Facts y fichas curadas por el equipo).",
+                  text: "La IA solo identifica el alimento y la porción. Calorías y macros se calculan con nuestra base de alimentos: valores de referencia basados en USDA FoodData Central y tablas de composición, productos de Open Food Facts y los alimentos que tú agregas.",
                 },
                 {
                   title: "Procedencia a la vista",
-                  text: "Cada alimento muestra de dónde salen sus datos y si ya fue verificado. Lo que es una estimación se marca como estimación.",
+                  text: "Cada alimento muestra de dónde salen sus datos y si ya fue verificado. Muchos valores todavía están en revisión y te lo indicamos; lo que es una estimación se marca como estimación.",
                 },
                 {
                   title: "Tiene límites, y te los decimos",
@@ -372,7 +372,7 @@ export default async function LandingPage({ searchParams }: PageProps) {
       {/* Llamado final */}
       <section aria-labelledby="empieza" className="px-4 pb-16 sm:px-6 lg:pb-24">
         <div className="relative mx-auto grid max-w-6xl gap-6 overflow-hidden rounded-3xl bg-primary px-6 py-12 text-primary-foreground sm:px-12 lg:py-16">
-          <BrandRing className="absolute -top-24 -right-24 size-80 opacity-40 [&_path]:stroke-brand-carbon [&_circle]:fill-brand-carbon" />
+          <BrandRing className="absolute -top-24 -right-24 hidden size-80 opacity-40 md:block [&_path]:stroke-brand-carbon [&_circle]:fill-brand-carbon" />
           <h2 id="empieza" className="relative max-w-2xl text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
             Empieza hoy, a tu ritmo.
           </h2>

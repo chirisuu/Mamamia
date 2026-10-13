@@ -38,7 +38,6 @@ const SAFE_PROTOCOLS = new Set(["http:", "https:", "mailto:"]);
  * del esquema, así "java\tscript:" no se cuela) y rechaza todo esquema que no sea http(s)/mailto.
  */
 export function safeHref(raw: string): string | null {
-  // eslint-disable-next-line no-control-regex
   const href = raw.replace(/[\u0000- \u007F-\u009F]+/g, "");
   if (!href || href.length > 2048) return null;
   if (href.startsWith("#")) return href;
@@ -133,7 +132,13 @@ export function parseInline(text: string, depth = 0): MdInline[] {
         const target = text.slice(close + 2, end).trim().split(/\s+/)[0] ?? "";
         const href = safeHref(target.replace(/^<|>$/g, ""));
         if (href) out.push({ type: "link", href, children: label });
-        else for (const node of label) node.type === "text" ? pushText(out, node.value) : out.push(node);
+        else {
+          // Enlace con esquema no permitido: queda solo su texto.
+          for (const node of label) {
+            if (node.type === "text") pushText(out, node.value);
+            else out.push(node);
+          }
+        }
         i = end + 1;
         continue;
       }

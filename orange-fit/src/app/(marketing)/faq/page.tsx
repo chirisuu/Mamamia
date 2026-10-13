@@ -57,7 +57,7 @@ export default async function FaqPage() {
         {supportEmail ? (
           <p className="text-muted-foreground">
             Escríbenos a{" "}
-            <a href={`mailto:${supportEmail}`} className="break-all font-medium text-primary-strong underline underline-offset-4">
+            <a href={`mailto:${supportEmail}`} className="break-words font-medium text-primary-strong underline underline-offset-4">
               {supportEmail}
             </a>
             .

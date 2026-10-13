@@ -49,7 +49,7 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
         icon: "search",
         title: "Búsqueda y registro manual",
         description:
-          "Busca entre alimentos genéricos, de marca y platos peruanos, elige la porción casera o los gramos y listo. También puedes crear tus propios alimentos.",
+          "Busca entre alimentos genéricos, platos peruanos y productos de marca, elige la porción casera o los gramos y listo. También puedes crear tus propios alimentos.",
         planFeature: "manual_logging",
       },
       {
