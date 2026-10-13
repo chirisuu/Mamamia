@@ -63,7 +63,8 @@ export function AssistantChat({ conversationId: initialConversationId, initialMe
 
   React.useEffect(() => () => abortRef.current?.abort(), []);
   React.useEffect(() => {
-    endRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
+    const reduce = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    endRef.current?.scrollIntoView({ block: "end", behavior: reduce ? "auto" : "smooth" });
   }, [messages]);
 
   const send = async (text: string) => {
@@ -84,6 +85,14 @@ export function AssistantChat({ conversationId: initialConversationId, initialMe
       { id: tempAssistantId, role: "assistant", content: "", flagged: false, createdAt: now, pending: true },
     ]);
     const dropProvisional = () => setMessages((list) => list.filter((m) => m.id !== tempUserId && m.id !== tempAssistantId));
+    // Si la conversación nació con este mensaje y la respuesta falla, el servidor la borra:
+    // se vuelve a "nueva" para no quedar apuntando a una conversación que ya no existe.
+    const startedNew = !conversationId;
+    const forgetNewConversation = () => {
+      if (!startedNew) return;
+      setConversationId(null);
+      window.history.replaceState(null, "", "/app/asistente");
+    };
     let finished = false;
     try {
       await streamChat(
@@ -112,6 +121,7 @@ export function AssistantChat({ conversationId: initialConversationId, initialMe
           } else if (event.type === "error") {
             finished = true;
             dropProvisional();
+            forgetNewConversation();
             setDraft(message);
             setError(new AiApiError(0, event.code, event.message));
             setStatus("");
@@ -123,6 +133,7 @@ export function AssistantChat({ conversationId: initialConversationId, initialMe
     } catch (e) {
       if (!finished) {
         dropProvisional();
+        forgetNewConversation();
         setDraft(message);
       }
       if (e instanceof DOMException && e.name === "AbortError") {
@@ -266,9 +277,11 @@ export function AssistantChat({ conversationId: initialConversationId, initialMe
           )}
         </div>
         <p className="text-xs text-muted-foreground">
-          {left > 0
-            ? `Te quedan ${formatNumber(left)} de ${formatNumber(quota.limit)} mensajes este mes.`
-            : "Usaste todos tus mensajes de este mes."}{" "}
+          {quota.limit === 0
+            ? "Tu plan no incluye mensajes al asistente; tu historial sigue disponible."
+            : left > 0
+              ? `Te quedan ${formatNumber(left)} de ${formatNumber(quota.limit)} mensajes este mes.`
+              : "Usaste todos tus mensajes de este mes."}{" "}
           No reemplaza a un profesional de salud.
         </p>
       </form>

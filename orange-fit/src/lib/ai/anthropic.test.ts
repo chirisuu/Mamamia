@@ -111,6 +111,27 @@ describe("AnthropicNutritionAI.identifyFoodsFromPhoto", () => {
     expect(res.meta.estimatedCostUsd).toBeCloseTo(0.00035, 8);
   });
 
+  it("si respondió el modelo de respaldo, se informa ese modelo y cada intento con su precio", async () => {
+    mocks.parse.mockResolvedValue(
+      message({
+        model: "claude-opus-5",
+        usage: {
+          ...usage,
+          iterations: [
+            { type: "message", model: null, input_tokens: 1000, output_tokens: 0, cache_creation_input_tokens: 0, cache_read_input_tokens: 0 },
+            { type: "fallback_message", model: "claude-opus-5", input_tokens: 1000, output_tokens: 500, cache_creation_input_tokens: 0, cache_read_input_tokens: 0 },
+          ],
+        },
+      }),
+    );
+    const ai = new AnthropicNutritionAI({ apiKey: "sk-test", models });
+    const res = await ai.identifyFoodsFromPhoto({ imageBase64: "QUJD", mediaType: "image/jpeg" });
+    expect(res.meta.model).toBe("claude-opus-5");
+    expect(res.meta).toMatchObject({ inputTokens: 2000, outputTokens: 500 });
+    // Intento declinado (Opus 5.5): 1000×4; respaldo (Opus 5): 1000×5 + 500×25 → 21500/1e6
+    expect(res.meta.estimatedCostUsd).toBeCloseTo(0.0215, 6);
+  });
+
   it("negativa (stop_reason refusal) → AI_REFUSED con los tokens gastados, sin resultado", async () => {
     mocks.parse.mockResolvedValue(message({ stop_reason: "refusal", parsed_output: null }));
     const ai = new AnthropicNutritionAI({ apiKey: "sk-test", models });

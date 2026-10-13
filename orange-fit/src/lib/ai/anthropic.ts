@@ -36,14 +36,19 @@ export function fallbackParams(model: string): { betas?: string[]; fallbacks?: "
   return isHaikuModel(model) ? {} : { betas: [FALLBACK_BETA], fallbacks: "default" };
 }
 
-function usageMeta(model: string, usage: BetaUsage | null | undefined, startedAt: number): AiCallMeta {
+/**
+ * Uso de una respuesta. `servedModel` es `response.model` (el de respaldo si hubo reintento
+ * server-side); `requestedModel`, el que pedimos (precio de los intentos sin modelo).
+ */
+function usageMeta(servedModel: string | null | undefined, requestedModel: string, usage: BetaUsage | null | undefined, startedAt: number): AiCallMeta {
+  const model = servedModel || requestedModel;
   const tokens = totalTokens(usage ?? null);
   return {
     provider: "anthropic",
     model,
     inputTokens: tokens.inputTokens,
     outputTokens: tokens.outputTokens,
-    estimatedCostUsd: estimateCostUsd(usage ?? null, model),
+    estimatedCostUsd: estimateCostUsd(usage ?? null, model, requestedModel),
     latencyMs: Math.max(0, Math.round(Date.now() - startedAt)),
   };
 }
@@ -123,7 +128,7 @@ export class AnthropicNutritionAI implements NutritionAI {
         },
         { signal: options.signal },
       );
-      const meta = usageMeta(response.model ?? model, response.usage, startedAt);
+      const meta = usageMeta(response.model, model, response.usage, startedAt);
       if (response.stop_reason === "refusal") throw new AiError("AI_REFUSED", { meta: toErrorMeta(meta) });
       if (response.stop_reason === "max_tokens") throw new AiError("AI_INVALID_OUTPUT", { meta: toErrorMeta(meta) });
       const parsed = response.parsed_output;
@@ -149,7 +154,7 @@ export class AnthropicNutritionAI implements NutritionAI {
         },
         { signal: options.signal },
       );
-      const meta = usageMeta(response.model ?? model, response.usage, startedAt);
+      const meta = usageMeta(response.model, model, response.usage, startedAt);
       if (response.stop_reason === "refusal") throw new AiError("AI_REFUSED", { meta: toErrorMeta(meta) });
       if (response.stop_reason === "max_tokens") throw new AiError("AI_INVALID_OUTPUT", { meta: toErrorMeta(meta) });
       const parsed = response.parsed_output;
@@ -169,7 +174,8 @@ export class AnthropicNutritionAI implements NutritionAI {
       stream = this.client.beta.messages.stream(
         {
           model,
-          max_tokens: 4000,
+          // Holgado para que el razonamiento (siempre activo) no corte la respuesta; el prompt pide brevedad.
+          max_tokens: 8000,
           ...fallbackParams(model),
           output_config: { effort: "low" },
           system: input.system,
@@ -183,7 +189,7 @@ export class AnthropicNutritionAI implements NutritionAI {
         }
       }
       const final = await stream.finalMessage();
-      const meta = usageMeta(final.model ?? model, final.usage, startedAt);
+      const meta = usageMeta(final.model, model, final.usage, startedAt);
       // Negativa (antes o a mitad de la respuesta): se descarta lo parcial.
       if (final.stop_reason === "refusal") throw new AiError("AI_REFUSED", { meta: toErrorMeta(meta) });
       const blocks: BetaContentBlock[] = final.content;

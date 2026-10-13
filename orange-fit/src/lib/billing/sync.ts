@@ -1,6 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/db/database.types";
+import { createNotification } from "@/lib/notifications/notify";
 import { isTerminalStatus } from "./status";
 import type { BillingProviderId, PaymentSnapshot, SubscriptionRow, SubscriptionSnapshot } from "./types";
 
@@ -200,4 +201,17 @@ export async function recordPayment(admin: Admin, snap: PaymentSnapshot): Promis
   );
   if (error) throw new Error(`payment_upsert_failed:${error.code ?? "unknown"}`);
   return "saved";
+}
+
+/**
+ * Aviso dentro de la app cuando un cobro falla (es lo único accionable: actualizar el medio de pago).
+ * `createNotification` nunca lanza: un aviso que falla no rompe el webhook.
+ */
+export async function notifyPaymentFailed(admin: Admin, userId: string): Promise<void> {
+  await createNotification(admin, userId, {
+    type: "billing.payment_failed",
+    title: "No pudimos cobrar tu suscripción",
+    body: "Revisa tu medio de pago para mantener Premium. Mientras tanto, tus registros siguen a salvo.",
+    url: "/app/perfil/suscripcion",
+  });
 }

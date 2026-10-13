@@ -231,3 +231,37 @@ export function describeSubscription(sub: SubLike, now: Date = new Date()): Subs
       return { ...empty, hasAccess: false, label: "Sin suscripción", tone: "neutral", canCancel: false };
   }
 }
+
+// ---------------------------------------------------------------------------------------------
+// Selección y elegibilidad
+
+type SubForPick = SubLike & { created_at: string };
+
+/**
+ * La suscripción que importa ahora: la que da acceso; si no hay, la que tiene un cobro pendiente;
+ * si no, la más reciente. Así una suscripción vieja cancelada no tapa a la vigente.
+ */
+export function pickCurrentSubscription<T extends SubForPick>(subs: readonly T[], now: Date = new Date()): T | null {
+  if (subs.length === 0) return null;
+  const rank = (s: T) => (describeSubscription(s, now).hasAccess ? 0 : s.status === "past_due" ? 1 : 2);
+  return [...subs].sort((a, b) => rank(a) - rank(b) || b.created_at.localeCompare(a.created_at))[0] ?? null;
+}
+
+/** ¿Bloquea una suscripción nueva? (ya tiene acceso o un cobro pendiente que resolver). */
+export function blocksNewCheckout(sub: SubLike, now: Date = new Date()): boolean {
+  return describeSubscription(sub, now).hasAccess || sub.status === "past_due";
+}
+
+/**
+ * La prueba gratis es solo para quien nunca tuvo Premium: sin pruebas previas, sin suscripciones
+ * que hayan llegado a activarse y sin cobros exitosos. Un checkout abandonado (`incomplete`) no cuenta.
+ */
+export function isTrialEligible(
+  subs: ReadonlyArray<Pick<SubLike, "status" | "trial_end">>,
+  hasSucceededPayment: boolean,
+): boolean {
+  if (hasSucceededPayment) return false;
+  return !subs.some(
+    (s) => s.trial_end != null || ["trialing", "active", "past_due", "canceled", "paused"].includes(s.status),
+  );
+}

@@ -113,6 +113,8 @@ export async function POST(request: Request) {
       eatingDisorderHistory: data.eatingDisorderHistory,
       professionalReview: data.professionalReview,
       flaggedConversation: history.flagged,
+      deficitBlocked: data.deficitBlocked,
+      fastingBlocked: data.fastingBlocked,
     };
     const context = buildAssistantContext({
       today: data.today,

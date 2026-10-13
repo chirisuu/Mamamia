@@ -37,10 +37,10 @@ export async function POST(request: Request) {
 
   try {
     assertImageUpload({ size: file.size, type: file.type });
-    const image = await prepareFoodImage(Buffer.from(await file.arrayBuffer()));
-
+    // El límite por minuto va antes de decodificar: no gastamos CPU en ráfagas.
     const limited = await enforceAiRateLimit(supabase, AI_RATE_LIMITS.photo.bucket, AI_RATE_LIMITS.photo.max, AI_RATE_LIMITS.photo.window);
     if (limited) return limited;
+    const image = await prepareFoodImage(Buffer.from(await file.arrayBuffer()));
 
     const ai = getNutritionAI();
     if (!ai) return aiJsonError(503, "AI_NOT_CONFIGURED", "La IA está pendiente de configurar.");

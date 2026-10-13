@@ -41,13 +41,15 @@ type Phase = "edit" | "analyzing" | "review" | "error";
  * revisión → confirmar. Fuente `text_ai` o `voice_ai` según el modo.
  */
 export function TextEntry(props: TextEntryProps) {
-  const { mode, text, onTextChange, quota: initialQuota, searchHref, header, busy } = props;
+  const { mode, text, onTextChange, quota: quotaProp, searchHref, header, busy } = props;
   const id = React.useId();
   const abortRef = React.useRef<AbortController | null>(null);
   const [phase, setPhase] = React.useState<Phase>("edit");
   const [result, setResult] = React.useState<TextAnalysisResponse | null>(null);
   const [error, setError] = React.useState<unknown>(null);
-  const [quota, setQuota] = React.useState(initialQuota);
+  const [ownQuota, setQuota] = React.useState(quotaProp);
+  // El cupo más reciente: el de este análisis o el que trae el padre (p. ej. tras una transcripción).
+  const quota = quotaProp.used > ownQuota.used ? quotaProp : ownQuota;
   const trimmed = text.trim();
   const unit = mode === "voice" ? "análisis de voz" : "análisis de texto";
 

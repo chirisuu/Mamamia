@@ -46,12 +46,16 @@ function recorderMimeType(): string | undefined {
 
 const MAX_RECORD_SECONDS = 60;
 
+/** Errores del dictado del navegador que no se arreglan reintentando (sí grabando el audio). */
+const SPEECH_SERVICE_ERRORS = new Set(["service-not-allowed", "network", "language-not-supported"]);
+
 const SPEECH_ERRORS: Record<string, string> = {
   "not-allowed": "No tenemos permiso para usar el micrófono. Actívalo en los ajustes del navegador o escribe lo que comiste.",
   "service-not-allowed": "Tu navegador no permite el dictado aquí. Escribe lo que comiste.",
   "no-speech": "No te escuchamos. Acércate al micrófono e inténtalo de nuevo.",
   "audio-capture": "No encontramos un micrófono disponible.",
   network: "El dictado de tu navegador necesita conexión a internet.",
+  "language-not-supported": "Tu navegador no tiene dictado en español de Perú.",
   aborted: "",
 };
 
@@ -116,6 +120,7 @@ export function VoiceFlow({ transcriptionConfigured, textHref, ...rest }: VoiceF
       text={text}
       setText={setText}
       append={append}
+      onUseRecording={capability === "speech" && transcriptionConfigured && canRecord() ? () => setCapability("record") : undefined}
     />
   );
 }
@@ -126,22 +131,29 @@ function VoiceInner({
   text,
   setText,
   append,
+  onUseRecording,
   ...rest
 }: Omit<VoiceFlowProps, "textHref"> & {
   capability: "speech" | "record";
   text: string;
   setText: (t: string) => void;
   append: (t: string) => void;
+  /** Si el dictado del navegador falla sin remedio, pasar a grabar audio (solo si está configurado). */
+  onUseRecording?: () => void;
 }) {
   const [listening, setListening] = React.useState(false);
   const [interim, setInterim] = React.useState("");
-  const [speechError, setSpeechError] = React.useState<string | null>(null);
+  const [speechError, setSpeechError] = React.useState<{ code: string; message: string } | null>(null);
+  // Al salir de la pantalla se descarta lo grabado (no se transcribe ni consume cupo).
+  const discardRef = React.useRef(false);
   const recognitionRef = React.useRef<SpeechRecognitionLike | null>(null);
 
   const [recording, setRecording] = React.useState(false);
   const [seconds, setSeconds] = React.useState(0);
   const [transcribing, setTranscribing] = React.useState(false);
   const [recordError, setRecordError] = React.useState<unknown>(null);
+  // La transcripción en el servidor también usa cupo de voz: se refleja en la línea de cupo.
+  const [quota, setQuota] = React.useState(rest.quota);
   const recorderRef = React.useRef<MediaRecorder | null>(null);
   const streamRef = React.useRef<MediaStream | null>(null);
   const timerRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
@@ -156,6 +168,7 @@ function VoiceInner({
 
   React.useEffect(
     () => () => {
+      discardRef.current = true;
       recognitionRef.current?.abort();
       if (recorderRef.current && recorderRef.current.state !== "inactive") recorderRef.current.stop();
       stopTracks();
@@ -186,7 +199,7 @@ function VoiceInner({
     };
     rec.onerror = (event) => {
       const msg = SPEECH_ERRORS[event.error] ?? "El dictado se interrumpió. Inténtalo de nuevo o escribe lo que comiste.";
-      if (msg) setSpeechError(msg);
+      if (msg) setSpeechError({ code: event.error, message: msg });
     };
     rec.onend = () => {
       setListening(false);
@@ -198,7 +211,7 @@ function VoiceInner({
       rec.start();
       setListening(true);
     } catch {
-      setSpeechError("No pudimos iniciar el dictado. Inténtalo de nuevo.");
+      setSpeechError({ code: "start", message: "No pudimos iniciar el dictado. Inténtalo de nuevo." });
     }
   };
 
@@ -224,14 +237,16 @@ function VoiceInner({
       stopTracks();
       setRecording(false);
       const blob = new Blob(chunks, { type: recorder.mimeType || mimeType || "audio/webm" });
-      if (blob.size === 0) return;
+      if (discardRef.current || blob.size === 0) return;
       const controller = new AbortController();
       abortRef.current = controller;
       setTranscribing(true);
       try {
         const res = await transcribeRequest(blob, controller.signal);
+        setQuota(res.quota);
         append(res.text);
       } catch (e) {
+        if (e instanceof AiApiError && e.quota) setQuota(e.quota);
         if (!(e instanceof DOMException && e.name === "AbortError")) setRecordError(e);
       } finally {
         setTranscribing(false);
@@ -265,9 +280,17 @@ function VoiceInner({
           {listening ? (interim ? `«${interim}»` : "Escuchando… habla con naturalidad.") : ""}
         </p>
         {speechError ? (
-          <p role="alert" className="text-sm font-medium text-destructive">
-            {speechError}
-          </p>
+          <div className="grid gap-2">
+            <p role="alert" className="text-sm font-medium text-destructive">
+              {speechError.message}
+            </p>
+            {onUseRecording && SPEECH_SERVICE_ERRORS.has(speechError.code) ? (
+              <Button variant="outline" size="sm" onClick={onUseRecording}>
+                <Mic aria-hidden="true" />
+                Grabar audio en su lugar
+              </Button>
+            ) : null}
+          </div>
         ) : null}
         <p className="text-xs text-muted-foreground">
           El dictado lo hace tu navegador (es-PE): según el navegador, el audio se procesa en tu equipo o en el servicio de voz de su fabricante.
@@ -282,7 +305,12 @@ function VoiceInner({
             <Skeleton className="h-10 w-full rounded-xl" />
           </div>
         ) : (
-          <Button size="lg" variant={recording ? "secondary" : "default"} onClick={recording ? stopRecording : startRecording}>
+          <Button
+            size="lg"
+            variant={recording ? "secondary" : "default"}
+            onClick={recording ? stopRecording : startRecording}
+            disabled={!recording && quota.used >= quota.limit}
+          >
             {recording ? <Square aria-hidden="true" /> : <Mic aria-hidden="true" />}
             {recording ? `Detener (${MAX_RECORD_SECONDS - seconds} s)` : "Grabar lo que comí"}
           </Button>
@@ -301,10 +329,21 @@ function VoiceInner({
         ) : null}
         <p className="text-xs text-muted-foreground">
           Tu navegador no tiene dictado, así que grabamos hasta {MAX_RECORD_SECONDS} segundos y el audio se transcribe con un proveedor externo
-          {transcriptionConfigured ? "" : " (pendiente de configurar)"}. El audio no se guarda.
+          {transcriptionConfigured ? "" : " (pendiente de configurar)"}. El audio no se guarda. Cada grabación usa 1 análisis de voz al
+          transcribirse y otro al entender el texto.
         </p>
       </div>
     );
 
-  return <TextEntry {...rest} mode="voice" text={text} onTextChange={setText} header={header} busy={listening || recording || transcribing} />;
+  return (
+    <TextEntry
+      {...rest}
+      quota={quota}
+      mode="voice"
+      text={text}
+      onTextChange={setText}
+      header={header}
+      busy={listening || recording || transcribing}
+    />
+  );
 }

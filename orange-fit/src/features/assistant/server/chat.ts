@@ -3,8 +3,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getActiveGoal, getActiveTargets } from "@/lib/data/targets";
 import type { ChatTurn } from "@/lib/ai/provider";
 import type { Database } from "@/lib/db/database.types";
-import { localDateInTz } from "@/lib/dates";
-import type { AssistantContextInput, GoalTypeValue } from "../lib/context";
+import { ageOn, isIsoDate, localDateInTz } from "@/lib/dates";
+import { assistantRiskBlocks, type AssistantContextInput, type GoalTypeValue } from "../lib/context";
 
 type Client = SupabaseClient<Database>;
 
@@ -156,9 +156,16 @@ export async function loadAssistantContextData(
   supabase: Client,
   userId: string,
   timezone: string,
-): Promise<Omit<AssistantContextInput, "quota" | "safety"> & { eatingDisorderHistory: boolean; professionalReview: boolean }> {
+): Promise<
+  Omit<AssistantContextInput, "quota" | "safety"> & {
+    eatingDisorderHistory: boolean;
+    professionalReview: boolean;
+    deficitBlocked: boolean;
+    fastingBlocked: boolean;
+  }
+> {
   const today = localDateInTz(new Date(), timezone);
-  const [targets, goal, totals] = await Promise.all([
+  const [targets, goal, totals, profile, weight] = await Promise.all([
     getActiveTargets(supabase, userId, today),
     getActiveGoal(supabase, userId),
     supabase
@@ -167,9 +174,20 @@ export async function loadAssistantContextData(
       .eq("user_id", userId)
       .eq("local_date", today)
       .maybeSingle(),
+    // Solo para el cribado de riesgo (no se envía al modelo).
+    supabase.from("profiles").select("birth_date, height_cm").eq("id", userId).maybeSingle(),
+    supabase.from("weight_logs").select("weight_kg").eq("user_id", userId).order("local_date", { ascending: false }).limit(1).maybeSingle(),
   ]);
   const t = totals.data;
   const goalType = goal && (GOALS as readonly string[]).includes(goal.goal_type) ? (goal.goal_type as GoalTypeValue) : null;
+  const birthDate = profile.data?.birth_date ?? null;
+  const blocks = assistantRiskBlocks({
+    ageYears: birthDate && isIsoDate(birthDate) ? ageOn(birthDate, today) : null,
+    heightCm: profile.data?.height_cm == null ? null : Number(profile.data.height_cm),
+    weightKg: weight.data?.weight_kg == null ? (goal?.current_weight_kg == null ? null : Number(goal.current_weight_kg)) : Number(weight.data.weight_kg),
+    healthFlags: goal?.health_flags ?? [],
+    goalType,
+  });
   return {
     today,
     goalType,
@@ -195,5 +213,7 @@ export async function loadAssistantContextData(
       : null,
     eatingDisorderHistory: Boolean(goal?.health_flags?.includes("eating_disorder_history")),
     professionalReview: Boolean(goal?.requires_professional_review),
+    deficitBlocked: blocks.deficitBlocked,
+    fastingBlocked: blocks.fastingBlocked,
   };
 }

@@ -17,6 +17,7 @@ import {
   findPriceByAmount,
   findSubscriptionByProviderId,
   isUuid,
+  notifyPaymentFailed,
   recordPayment,
   releaseBillingEvent,
   setSubscriptionStatus,
@@ -32,8 +33,13 @@ import { BillingError, type SubscriptionRow, type SubscriptionSnapshot } from ".
 export const MERCADOPAGO_API = "https://api.mercadopago.com";
 /** Panel de Mercado Pago donde la persona ve y gestiona sus suscripciones (Perú). */
 export const MERCADOPAGO_MANAGE_URL = "https://www.mercadopago.com.pe/subscriptions";
-/** Antigüedad máxima aceptada de la firma de un webhook. */
-export const MERCADOPAGO_SIGNATURE_TOLERANCE_SECONDS = 600;
+/**
+ * Antigüedad máxima aceptada de la firma de un webhook (24 h). Es amplia a propósito: Mercado Pago
+ * reintenta durante horas y no documenta si vuelve a firmar cada reintento. Reprocesar una
+ * notificación vieja no es peligroso (siempre consultamos el recurso real y hay idempotencia por id);
+ * la ventana solo descarta capturas antiguas.
+ */
+export const MERCADOPAGO_SIGNATURE_TOLERANCE_SECONDS = 24 * 60 * 60;
 
 type Admin = SupabaseClient<Database>;
 type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
@@ -215,9 +221,14 @@ export function verifyMercadoPagoSignature(input: {
 // ---------------------------------------------------------------------------------------------
 // Procesamiento de notificaciones
 
-async function syncPreapproval(admin: Admin, client: MercadoPagoClient, preapprovalId: string): Promise<string> {
+async function fetchPreapproval(client: MercadoPagoClient, preapprovalId: string): Promise<MercadoPagoPreapproval> {
   const pre = await mpRequest<MercadoPagoPreapproval>(client, "GET", `/preapproval/${encodeURIComponent(preapprovalId)}`);
-  const id = pre.id ?? preapprovalId;
+  return { ...pre, id: pre.id ?? preapprovalId };
+}
+
+/** Guarda el estado real de una preaprobación ya leída de Mercado Pago. */
+async function applyPreapproval(admin: Admin, pre: MercadoPagoPreapproval): Promise<string> {
+  const id = pre.id;
   const existing = await findSubscriptionByProviderId(admin, id);
 
   // El dueño es `external_reference` (lo pone nuestro checkout). Nunca se cambia de dueño.
@@ -262,6 +273,32 @@ async function syncPreapproval(admin: Admin, client: MercadoPagoClient, preappro
   return outcome.result;
 }
 
+async function syncPreapproval(admin: Admin, client: MercadoPagoClient, preapprovalId: string): Promise<string> {
+  return applyPreapproval(admin, await fetchPreapproval(client, preapprovalId));
+}
+
+/**
+ * Confirmación activa al volver de Mercado Pago (`preapproval_id` en la URL de retorno), por si la
+ * notificación se demora. Solo sincroniza si la preaprobación es de esta persona.
+ */
+export async function syncMercadoPagoPreapprovalForUser(
+  admin: Admin,
+  input: { preapprovalId: string; userId: string },
+  client?: MercadoPagoClient,
+): Promise<"synced" | "not_owner" | "unmatched" | "skipped"> {
+  if (!client && !isMercadoPagoConfigured()) throw new BillingError(503, "BILLING_NOT_CONFIGURED", NOT_CONFIGURED_MESSAGE);
+  let pre: MercadoPagoPreapproval;
+  try {
+    pre = await fetchPreapproval(client ?? defaultClient(), input.preapprovalId);
+  } catch (error) {
+    if (error instanceof BillingError && error.code === "PROVIDER_NOT_FOUND") return "not_owner";
+    throw error;
+  }
+  if (pre.external_reference !== input.userId) return "not_owner";
+  const result = await applyPreapproval(admin, pre);
+  return result === "saved" ? "synced" : result === "unmatched" ? "unmatched" : "skipped";
+}
+
 async function syncAuthorizedPayment(admin: Admin, client: MercadoPagoClient, authorizedPaymentId: string): Promise<string> {
   const ap = await mpRequest<MercadoPagoAuthorizedPayment>(client, "GET", `/authorized_payments/${encodeURIComponent(authorizedPaymentId)}`);
   const preapprovalId = ap.preapproval_id;
@@ -287,7 +324,7 @@ async function syncAuthorizedPayment(admin: Admin, client: MercadoPagoClient, au
     await setSubscriptionStatus(admin, preapprovalId, "past_due", ["active"]);
   }
 
-  return recordPayment(admin, {
+  const result = await recordPayment(admin, {
     userId: sub.user_id,
     provider: "mercadopago",
     providerPaymentId: String(ap.id),
@@ -297,6 +334,8 @@ async function syncAuthorizedPayment(admin: Admin, client: MercadoPagoClient, au
     status,
     paidAt: status === "succeeded" ? (ap.last_modified ?? ap.debit_date ?? new Date().toISOString()) : null,
   });
+  if (result === "saved" && status === "failed") await notifyPaymentFailed(admin, sub.user_id);
+  return result;
 }
 
 /** Procesa una notificación verificada consultando SIEMPRE el recurso real en Mercado Pago. */

@@ -25,10 +25,16 @@ export function normalizeForModeration(text: string): string {
 
 const SELF_HARM: RegExp[] = [
   /\bsuicid/,
-  /\b(matarme|quitarme la vida|acabar con mi vida|terminar con mi vida)\b/,
+  /\b(quitarme la vida|acabar con mi vida|terminar con mi vida)\b/,
+  // "Me mato entrenando" es una expresión común: no cuenta.
+  /\b(matarme|me voy a matar|me quiero matar)\b(?! (entrenando|en el (gym|gimnasio)|haciendo|trabajando|estudiando|de (risa|hambre)))/,
   /\b(no quiero (seguir )?vivir|quiero morir(me)?|me quiero morir|ganas de morir(me)?|mejor estaria muerta?)\b/,
-  /\b(hacerme dano|lastimarme a proposito|autolesion\w*|hacerme cortes|cortarme (los brazos|las munecas|la piel|las piernas))\b/,
+  // "Hacerme daño" a secas suele ser una lesión deportiva: se exige la intención.
+  /\b((?<!\bno )(quiero|ganas de|necesito) (hacerme dano|lastimarme)|me hago dano a proposito|lastimarme a proposito|hacerme dano a proposito)\b/,
+  /\b(autolesion\w*|hacerme cortes|cortarme (los brazos|las munecas|la piel|las piernas))\b/,
 ];
+
+const DAYS = "(\\d+|dos|tres|cuatro|cinco|varios|unos)";
 
 const EATING_DISORDER: RegExp[] = [
   /\b(me|te|se) (hago|haces|hace|provoco|provocas|provoca|induzco) (el )?vomit/,
@@ -36,28 +42,36 @@ const EATING_DISORDER: RegExp[] = [
   /\bvomit(ar|o|e) (despues de comer|lo que (como|comi|comere))\b/,
   /\b(meterme los dedos|purgarme|purgarse|me purgo)\b/,
   /\b(laxantes?|diureticos?) (para|y asi|asi) (bajar|adelgazar|no engordar|compensar|quemar)/,
-  /\b(dejar de comer|dejo de comer|deje de comer|no comer nada|no he comido nada (en|desde))\b/,
+  // "Dejar de comer pan" es un hábito; "dejar de comer" a secas o para bajar, una señal.
+  new RegExp(`\\b(dejar|dejo|deje|deja) de comer(?=$| (por completo|del todo|para (bajar|adelgazar|no engordar)|${DAYS} dias|todo el dia|un tiempo|y (bajar|adelgazar)))`),
+  new RegExp(`\\bno comer nada(?=$| (en todo el dia|todo el dia|durante ${DAYS} dias|${DAYS} dias|para (bajar|adelgazar)))`),
+  new RegExp(`\\bno he comido( nada)? (en|desde hace) ${DAYS} dias\\b`),
+  /\b(matarme de hambre|morirme de hambre para)\b/,
   /\b(me castigo|castigarme) (sin comer|con hambre|con ejercicio|dejando de comer)\b/,
   /\b(atracon(es)?|me doy atracones|me atraco)\b/,
-  /\b(odio comer|me da (asco|miedo) comer|miedo (a|de) comer)\b/,
+  /\b(me da miedo comer|miedo (a|de) comer|odio comer(?=$| (porque|y|cuando)))/,
 ];
 
 const EXTREME_RESTRICTION: RegExp[] = [
-  /\b(pasar(me)?|estar) (\d+|dos|tres|cuatro|cinco|varios|unos) dias sin comer\b/,
-  /\b(ayunar|ayuno de|ayuno por) (\d+|dos|tres|cuatro|cinco|varios) dias\b/,
+  new RegExp(`\\b(pasar(me)?|estar) ${DAYS} dias sin comer\\b`),
+  new RegExp(`\\b(ayunar|ayuno de|ayuno por) ${DAYS} dias\\b`),
 ];
 
-/** Metas de menos de 800 kcal al día ("dieta de 500 calorías", "comer 600 kcal al día"). */
+/**
+ * Metas diarias de menos de 800 kcal ("dieta de 500 calorías", "comer 600 kcal al día"). Una
+ * comida de 300 kcal no cuenta: hace falta que sea por día o que sea la meta/dieta.
+ */
 function mentionsVeryLowCalories(normalized: string): boolean {
   const re = /\b(\d{2,4}) ?(kcal|calorias|cal)\b/g;
-  const context = /\b(dieta|comer|consumir|bajar a|solo|al dia|diarias|por dia|meta)\b/;
+  const daily = /\b(al dia|diarias?|diarios?|por dia|cada dia|a diario|todo el dia)\b/;
+  const planBefore = /\b(dieta|meta|objetivo|limite|bajar a|bajarme a|reducir a|quedarme en|solo comer|comer solo)\b[^\d]{0,12}$/;
   let match: RegExpExecArray | null;
   while ((match = re.exec(normalized))) {
     const value = Number(match[1]);
-    if (value >= 100 && value < 800) {
-      const window = normalized.slice(Math.max(0, match.index - 40), match.index + match[0].length + 25);
-      if (context.test(window)) return true;
-    }
+    if (value < 100 || value >= 800) continue;
+    const after = normalized.slice(match.index, match.index + match[0].length + 25);
+    const before = normalized.slice(Math.max(0, match.index - 30), match.index);
+    if (daily.test(after) || planBefore.test(before)) return true;
   }
   return false;
 }

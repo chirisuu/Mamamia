@@ -5,6 +5,7 @@
  * se omiten las cifras de calorías y se activa el "modo cuidado". Puro y probado.
  */
 import { formatNumber } from "@/lib/format";
+import { computeBmi, HEALTH_FLAGS, screenRisk, type HealthFlag } from "@/lib/nutrition";
 
 export type GoalTypeValue = "lose_fat" | "gain_muscle" | "maintain" | "recomposition" | "improve_habits";
 
@@ -43,8 +44,44 @@ export type AssistantContextInput = {
     professionalReview: boolean;
     /** Esta conversación ya tuvo un mensaje marcado por la moderación. */
     flaggedConversation: boolean;
+    /** El cribado de `src/lib/nutrition/risk.ts` bloquea el déficit (menor de edad, embarazo, IMC bajo…). */
+    deficitBlocked?: boolean;
+    /** El cribado bloquea el ayuno. */
+    fastingBlocked?: boolean;
   };
 };
+
+/**
+ * Bloqueos del cribado de riesgo (los mismos que aplican las metas y el ayuno de la app). Al modelo
+ * solo llega el bloqueo, nunca el motivo (edad, embarazo, IMC). Sin datos suficientes, no bloquea
+ * por edad ni IMC, pero las condiciones declaradas siempre cuentan.
+ */
+export function assistantRiskBlocks(input: {
+  ageYears: number | null;
+  heightCm: number | null;
+  weightKg: number | null;
+  healthFlags: readonly string[];
+  goalType: GoalTypeValue | null;
+}): { deficitBlocked: boolean; fastingBlocked: boolean } {
+  let bmi: number | null = null;
+  if (input.heightCm && input.weightKg) {
+    try {
+      bmi = computeBmi(input.weightKg, input.heightCm);
+    } catch {
+      bmi = null;
+    }
+  }
+  const healthFlags = input.healthFlags.filter((f): f is HealthFlag => (HEALTH_FLAGS as readonly string[]).includes(f));
+  const screening = screenRisk({
+    ageYears: input.ageYears ?? Number.NaN,
+    // El sexo no cambia el cribado (las banderas declaradas se respetan siempre).
+    sex: "female",
+    bmi,
+    healthFlags,
+    goal: input.goalType ?? "maintain",
+  });
+  return { deficitBlocked: screening.blocks.calorieDeficit, fastingBlocked: screening.blocks.fasting };
+}
 
 export function isCareMode(safety: AssistantContextInput["safety"]): boolean {
   return safety.eatingDisorderHistory || safety.flaggedConversation;
@@ -100,6 +137,12 @@ export function buildAssistantContext(input: AssistantContextInput): string {
     rules.push(
       "Su perfil indica que conviene acompañamiento profesional: no propongas déficits ni cambios de meta; sugiere revisarlo con un profesional de salud.",
     );
+  }
+  if (!careMode && input.safety.deficitBlocked) {
+    rules.push("Por su perfil, la app no aplica déficit de calorías: no propongas comer menos de su meta ni bajar de peso; enfócate en calidad y regularidad.");
+  }
+  if (input.safety.fastingBlocked) {
+    rules.push("Por su perfil, la app no habilita el ayuno: no propongas ayunos ni saltarse comidas.");
   }
 
   return [
