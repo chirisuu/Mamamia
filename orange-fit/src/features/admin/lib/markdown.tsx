@@ -45,7 +45,6 @@ const ALLOWED_PROTOCOLS = new Set(["http:", "https:", "mailto:"]);
  */
 export function safeHref(raw: string): string | null {
   // Quitar caracteres de control y espacios que los navegadores ignoran dentro del esquema.
-  // eslint-disable-next-line no-control-regex
   const href = raw.replace(/[\u0000-\u001F\u007F\s]+/g, "");
   if (!href || href.length > 2000) return null;
   if (href.startsWith("#")) return href;
@@ -205,7 +204,13 @@ export function parseInline(text: string, depth = 0): MdInline[] {
           const href = safeHref(target.replace(/^<|>$/g, ""));
           const children = parseInline(label, depth + 1);
           if (href) out.push({ type: "link", href, children });
-          else for (const c of children) c.type === "text" ? pushText(out, c.value) : out.push(c);
+          else {
+            // Enlace inseguro: se conserva solo el texto (sin enlace).
+            for (const c of children) {
+              if (c.type === "text") pushText(out, c.value);
+              else out.push(c);
+            }
+          }
           i = end + 1;
           continue;
         }

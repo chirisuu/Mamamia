@@ -1,5 +1,6 @@
 import "server-only";
 import type { Json } from "@/lib/db/database.types";
+import { changedFlagKeys, ensurePaymentFlags, PAYMENT_FLAG_KEYS } from "../lib/flags";
 import type { SettingsData } from "../schemas";
 import { AdminOpError, dbError, logAdminAction, type Db } from "./db";
 
@@ -34,15 +35,28 @@ export async function readSettings(supabase: Db, fallbackAppName: string): Promi
     supportEmail: str("support_email"),
     defaultTrialDays: typeof trial === "number" && Number.isFinite(trial) ? trial : 7,
     maintenanceBanner: str("maintenance_banner"),
-    featureFlags:
-      flags && typeof flags === "object" && !Array.isArray(flags)
-        ? Object.entries(flags as Record<string, unknown>)
-            .map(([key, value]) => ({ key, enabled: value === true }))
-            .sort((a, b) => a.key.localeCompare(b.key))
-        : [],
+    // Los de pagos siempre aparecen (sin bandera = habilitado, como en src/lib/billing/catalog.ts).
+    featureFlags: ensurePaymentFlags(
+      isRecord(flags) ? Object.entries(flags).map(([key, value]) => ({ key, enabled: value === true })) : [],
+    ),
     updatedAt: updated,
     presentKeys: (data ?? []).map((r) => r.key),
   };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+/**
+ * Los interruptores de pagos no se pueden borrar desde el panel: si no llegan en el formulario,
+ * se conserva el valor guardado (quitar la clave equivaldría a habilitar el proveedor).
+ */
+export function keepPaymentFlags(data: SettingsData, currentFlags: unknown): SettingsData {
+  const current = isRecord(currentFlags) ? currentFlags : {};
+  const missing = PAYMENT_FLAG_KEYS.filter((k) => !data.featureFlags.some((f) => f.key === k) && typeof current[k] === "boolean");
+  if (missing.length === 0) return data;
+  return { ...data, featureFlags: [...data.featureFlags, ...missing.map((key) => ({ key, enabled: current[key] === true }))] };
 }
 
 /**
@@ -74,7 +88,7 @@ export async function saveSettings(supabase: Db, data: SettingsData): Promise<{ 
   const { data: current, error: readError } = await supabase.from("app_settings").select("key, value").in("key", [...SETTINGS_KEYS]);
   if (readError) throw dbError(readError, "No se pudo leer la configuración.");
   const before = new Map((current ?? []).map((r) => [r.key, r.value as unknown]));
-  const rows = settingsToRows(data);
+  const rows = settingsToRows(keepPaymentFlags(data, before.get("feature_flags")));
   const changed = changedKeys(before, rows);
   if (changed.length === 0) return { changed };
 
@@ -85,6 +99,16 @@ export async function saveSettings(supabase: Db, data: SettingsData): Promise<{ 
   if ((written ?? []).length !== toWrite.length) {
     throw new AdminOpError("FORBIDDEN", "No tienes permiso para cambiar la configuración.");
   }
-  await logAdminAction(supabase, { action: "settings.update", targetTable: "app_settings", targetId: null, metadata: { keys: changed } });
+  const flagsRow = rows.find((r) => r.key === "feature_flags");
+  const flagsChanged =
+    changed.includes("feature_flags") && flagsRow
+      ? changedFlagKeys(isRecord(before.get("feature_flags")) ? (before.get("feature_flags") as Record<string, unknown>) : {}, flagsRow.value as Record<string, boolean>)
+      : undefined;
+  await logAdminAction(supabase, {
+    action: "settings.update",
+    targetTable: "app_settings",
+    targetId: null,
+    metadata: { keys: changed, flags: flagsChanged },
+  });
   return { changed };
 }

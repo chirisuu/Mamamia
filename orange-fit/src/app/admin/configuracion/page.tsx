@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { PageHeader } from "@/components/ui/page-header";
 import { requireRole } from "@/lib/auth/session";
 import { DEFAULT_APP_NAME } from "@/lib/env";
+import { integrationStatus } from "@/lib/server-env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatDateTime } from "@/features/admin/components/admin-ui";
 import { SettingsForm } from "@/features/admin/components/settings-form";
@@ -13,6 +14,7 @@ export default async function AdminSettingsPage() {
   await requireRole("admin");
   const supabase = await createSupabaseServerClient();
   const settings = await readSettings(supabase, DEFAULT_APP_NAME);
+  const status = integrationStatus();
   return (
     <div className="grid gap-6">
       <PageHeader
@@ -28,6 +30,7 @@ export default async function AdminSettingsPage() {
           maintenanceBanner: settings.maintenanceBanner ?? "",
           featureFlags: settings.featureFlags,
         }}
+        paymentsConfigured={{ stripe: status.stripe, mercadopago: status.mercadopago }}
       />
     </div>
   );

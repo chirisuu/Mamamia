@@ -20,7 +20,7 @@ export const auditFiltersSchema = z.object({
     .string()
     .trim()
     .max(60)
-    .regex(/^[a-z0-9_]*$/)
+    .regex(/^[a-z0-9_.]*$/)
     .optional()
     .catch(undefined),
   actor: z.uuid().optional().catch(undefined),

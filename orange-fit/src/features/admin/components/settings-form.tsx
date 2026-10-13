@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -13,13 +14,17 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/sonner";
 import { saveSettingsAction } from "../actions/settings";
+import { FLAGS_IN_USE, isPaymentFlag, PAYMENT_FLAGS } from "../lib/flags";
 import { applyFieldErrors } from "../lib/form-errors";
 import { numberOrNull, settingsSchema, type SettingsInput } from "../schemas";
 
-export function SettingsForm({ initial }: { initial: SettingsInput }) {
+export type PaymentsConfigured = Record<(typeof PAYMENT_FLAGS)[number]["provider"], boolean>;
+
+export function SettingsForm({ initial, paymentsConfigured }: { initial: SettingsInput; paymentsConfigured: PaymentsConfigured }) {
   const router = useRouter();
   const form = useForm<SettingsInput>({ resolver: zodResolver(settingsSchema), defaultValues: initial, mode: "onBlur" });
   const flags = useFieldArray({ control: form.control, name: "featureFlags" });
+  const otherFlags = flags.fields.map((flag, index) => ({ flag, index })).filter(({ flag }) => !isPaymentFlag(flag.key));
   const [newKey, setNewKey] = React.useState("");
   const [newKeyError, setNewKeyError] = React.useState<string | null>(null);
 
@@ -126,15 +131,65 @@ export function SettingsForm({ initial }: { initial: SettingsInput }) {
 
         <Card>
           <CardHeader>
+            <CardTitle as="h2">Medios de pago</CardTitle>
+            <CardDescription>
+              Apagar un medio de pago lo oculta en Precios y Premium y el checkout responde «no disponible por ahora». Las
+              suscripciones ya activas no se tocan.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="grid gap-2">
+              {PAYMENT_FLAGS.map((pf) => {
+                const index = flags.fields.findIndex((f) => f.key === pf.key);
+                if (index === -1) return null;
+                const configured = paymentsConfigured[pf.provider];
+                return (
+                  <li key={pf.key} className="rounded-xl border border-border px-3 py-3">
+                    <FormField
+                      control={form.control}
+                      name={`featureFlags.${index}.enabled`}
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center gap-3">
+                          <div className="grid min-w-0 flex-1 gap-1">
+                            <FormLabel className="text-base">{pf.label}</FormLabel>
+                            <FormDescription>
+                              {pf.hint}{" "}
+                              {configured
+                                ? field.value
+                                  ? "Disponible para cobrar."
+                                  : "Configurado, pero apagado."
+                                : "Credenciales pendientes de configurar: aunque lo enciendas, no se podrá cobrar hasta configurarlas."}
+                            </FormDescription>
+                            <div className="flex flex-wrap gap-1.5">
+                              <Badge variant={configured ? "success" : "outline"}>{configured ? "Credenciales configuradas" : "Pendiente de configurar"}</Badge>
+                              <Badge variant={field.value ? "soft" : "secondary"}>{field.value ? "Encendido" : "Apagado"}</Badge>
+                            </div>
+                          </div>
+                          <FormControl>
+                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </li>
+                );
+              })}
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle as="h2">Interruptores de funciones</CardTitle>
             <CardDescription>
               Encender un interruptor no basta si la función necesita credenciales: el servicio también debe estar configurado.
+              Los que dicen «sin efecto todavía» se guardan, pero ninguna parte de la app los lee aún.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
-            {flags.fields.length === 0 ? <p className="text-sm text-muted-foreground">No hay interruptores todavía.</p> : null}
+            {otherFlags.length === 0 ? <p className="text-sm text-muted-foreground">No hay otros interruptores todavía.</p> : null}
             <ul className="grid gap-2">
-              {flags.fields.map((flag, index) => (
+              {otherFlags.map(({ flag, index }) => (
                 <li key={flag.id} className="flex items-center gap-3 rounded-xl border border-border px-3 py-2">
                   <FormField
                     control={form.control}
@@ -144,7 +199,10 @@ export function SettingsForm({ initial }: { initial: SettingsInput }) {
                         <FormControl>
                           <Switch checked={field.value} onCheckedChange={field.onChange} />
                         </FormControl>
-                        <FormLabel className="min-w-0 flex-1 truncate font-mono text-sm">{flag.key}</FormLabel>
+                        <div className="grid min-w-0 flex-1">
+                          <FormLabel className="truncate font-mono text-sm">{flag.key}</FormLabel>
+                          <span className="truncate text-xs text-muted-foreground">{FLAGS_IN_USE[flag.key] ? `Lo usa: ${FLAGS_IN_USE[flag.key]}` : "Sin efecto todavía"}</span>
+                        </div>
                       </FormItem>
                     )}
                   />

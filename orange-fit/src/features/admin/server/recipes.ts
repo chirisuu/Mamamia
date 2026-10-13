@@ -56,6 +56,8 @@ export type AdminIngredient = {
   brandName: string | null;
   foodIsPublic: boolean;
   foodStatus: Tables<"foods">["verification_status"];
+  /** Por 100 g (para la vista previa de nutrición del editor). */
+  per100g: { energyKcal: number; proteinG: number; carbsG: number; fatG: number } | null;
   grams: number;
   displayQuantity: number | null;
   displayUnit: string | null;
@@ -78,7 +80,7 @@ export async function getAdminRecipe(supabase: Db, id: string): Promise<AdminRec
   const [{ data: ings, error: iErr }, { data: nutrition, error: nErr }] = await Promise.all([
     supabase
       .from("recipe_ingredients")
-      .select("id, food_id, grams, display_quantity, display_unit, note, position, foods(name, is_public, verification_status, brands(name))")
+      .select("id, food_id, grams, display_quantity, display_unit, note, position, foods(name, is_public, verification_status, energy_kcal, protein_g, carbs_g, fat_g, brands(name))")
       .eq("recipe_id", id)
       .order("position"),
     supabase.from("recipe_nutrition").select("*").eq("recipe_id", id).maybeSingle(),
@@ -92,7 +94,16 @@ export async function getAdminRecipe(supabase: Db, id: string): Promise<AdminRec
     display_unit: string | null;
     note: string | null;
     position: number;
-    foods: { name: string; is_public: boolean; verification_status: Tables<"foods">["verification_status"]; brands: { name: string } | null } | null;
+    foods: {
+      name: string;
+      is_public: boolean;
+      verification_status: Tables<"foods">["verification_status"];
+      energy_kcal: number;
+      protein_g: number;
+      carbs_g: number;
+      fat_g: number;
+      brands: { name: string } | null;
+    } | null;
   };
   return {
     recipe: recipe as AdminRecipeRow,
@@ -104,6 +115,9 @@ export async function getAdminRecipe(supabase: Db, id: string): Promise<AdminRec
       brandName: r.foods?.brands?.name ?? null,
       foodIsPublic: Boolean(r.foods?.is_public),
       foodStatus: r.foods?.verification_status ?? "unverified",
+      per100g: r.foods
+        ? { energyKcal: Number(r.foods.energy_kcal), proteinG: Number(r.foods.protein_g), carbsG: Number(r.foods.carbs_g), fatG: Number(r.foods.fat_g) }
+        : null,
       grams: Number(r.grams),
       displayQuantity: r.display_quantity == null ? null : Number(r.display_quantity),
       displayUnit: r.display_unit,

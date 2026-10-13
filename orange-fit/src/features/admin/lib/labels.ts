@@ -108,3 +108,71 @@ export function labelOf<T extends string>(labels: Record<T, string>, code: strin
   if (!code) return fallback;
   return (labels as Record<string, string>)[code] ?? code;
 }
+
+/** Acciones de `admin_audit_logs` (las que escribe el panel y otros módulos). */
+export const AUDIT_ACTION_LABELS: Record<string, string> = {
+  "settings.update": "Configuración actualizada",
+  "food.create": "Alimento creado",
+  "food.update": "Alimento editado",
+  "food.verify": "Verificación de alimento",
+  "food.merge": "Alimentos fusionados",
+  "food.usda_import": "Importación desde USDA",
+  "reference_price.create": "Precio referencial creado",
+  "reference_price.update": "Precio referencial editado",
+  "reference_price.delete": "Precio referencial eliminado",
+  "recipe.publish": "Receta publicada",
+  "recipe.reject": "Receta rechazada",
+  "recipe.create": "Receta oficial creada",
+  "recipe.update": "Receta oficial editada",
+  "recipe.image_upload": "Imagen de receta subida",
+  "recipe.image_remove": "Imagen de receta quitada",
+  "content.create": "Contenido creado",
+  "content.update": "Contenido editado",
+  "content.status": "Contenido publicado/despublicado",
+  "content.delete": "Contenido eliminado",
+  "content.reorder": "Contenido reordenado",
+  "plan.update": "Plan editado",
+  "plan_price.create": "Precio de plan creado",
+  "plan_price.update": "Precio de plan editado",
+  "user_role.grant": "Rol otorgado",
+  "user_role.revoke": "Rol quitado",
+  "error_report.status": "Estado de error cambiado",
+  "account.deleted_by_user": "Cuenta eliminada por su titular",
+};
+
+/** Grupos para el filtro de la auditoría (prefijo de la acción). */
+export const AUDIT_ACTION_GROUPS = [
+  { value: "settings.", label: "Configuración" },
+  { value: "food.", label: "Alimentos" },
+  { value: "reference_price.", label: "Precios referenciales" },
+  { value: "recipe.", label: "Recetas" },
+  { value: "content.", label: "Contenidos" },
+  { value: "plan", label: "Planes y precios" },
+  { value: "user_role.", label: "Roles" },
+  { value: "error_report.", label: "Errores" },
+  { value: "account.", label: "Cuentas" },
+] as const;
+
+export const AUDIT_TABLES = [
+  "app_settings",
+  "foods",
+  "reference_prices",
+  "recipes",
+  "content_pages",
+  "plans",
+  "plan_prices",
+  "user_roles",
+  "error_reports",
+  "auth.users",
+] as const;
+
+/** Slugs legales que muestra el sitio en /legal/{slug} (src/features/marketing/content.ts). */
+export const LEGAL_SLUGS = ["terminos", "privacidad", "datos-de-salud"] as const;
+
+/** Dónde se ve cada tipo de contenido publicado (para no prometer lo que el sitio no muestra). */
+export const CONTENT_KIND_HINTS: Record<ContentKind, string> = {
+  faq: "Se muestra en /faq (y las primeras en la portada) en el orden indicado. El título es la pregunta.",
+  legal: `Se muestra en /legal/{slug}. El sitio solo enlaza estos slugs: ${LEGAL_SLUGS.join(", ")}. En borrador, la página dice «en preparación».`,
+  landing_block: "Se guarda y publica, pero hoy ninguna página del sitio lee este tipo.",
+  article: "Se guarda y publica, pero hoy ninguna página del sitio lee este tipo.",
+};

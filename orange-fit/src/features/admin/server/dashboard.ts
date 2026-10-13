@@ -1,6 +1,6 @@
 import "server-only";
-import { parseAdminMetrics, type AdminMetrics } from "../lib/metrics";
-import { dbError, type Db } from "./db";
+import { parseAdminMetrics, parseAiUsage, type AdminMetrics, type AiUsage } from "../lib/metrics";
+import { dbError, rpcUntyped, type Db } from "./db";
 
 export type WorkQueues = {
   foodsUnverified: number;
@@ -33,4 +33,11 @@ export async function getAdminMetrics(supabase: Db): Promise<AdminMetrics> {
   const { data, error } = await supabase.rpc("admin_metrics");
   if (error) throw dbError(error, "No se pudieron leer las métricas.");
   return parseAdminMetrics(data);
+}
+
+/** `admin_ai_usage(months)`: agregados por mes, tipo, modelo y estado (exige admin en la base). */
+export async function getAiUsage(supabase: Db, months: number): Promise<AiUsage> {
+  const { data, error } = await rpcUntyped<unknown>(supabase, "admin_ai_usage", { months });
+  if (error) throw dbError(error, "No se pudo leer el uso de IA.");
+  return parseAiUsage(data);
 }

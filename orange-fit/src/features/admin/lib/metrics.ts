@@ -188,3 +188,16 @@ export function formatMonth(month: string): string {
   const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, 15));
   return d.toLocaleDateString("es-PE", { month: "short", year: "numeric", timeZone: "UTC" }).replace(/\./g, "");
 }
+
+/** Últimos `months` meses ("YYYY-MM") hasta el actual, en hora de Lima (UTC−5, sin horario de verano). */
+export function lastMonths(months: number, now: Date = new Date()): string[] {
+  const lima = new Date(now.getTime() - 5 * 3_600_000);
+  const year = lima.getUTCFullYear();
+  const month = lima.getUTCMonth();
+  const out: string[] = [];
+  for (let i = Math.max(1, Math.floor(months)) - 1; i >= 0; i--) {
+    const d = new Date(Date.UTC(year, month - i, 1));
+    out.push(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`);
+  }
+  return out;
+}

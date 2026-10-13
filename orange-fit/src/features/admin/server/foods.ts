@@ -350,3 +350,14 @@ export async function deleteReferencePrice(supabase: Db, id: string): Promise<vo
   if (!deleted?.length) throw new AdminOpError("NOT_FOUND", "El precio no existe.");
   await logAdminAction(supabase, { action: "reference_price.delete", targetTable: "reference_prices", targetId: id });
 }
+
+/** Alimentos públicos sin verificar (badge de la cola). */
+export async function countUnverifiedFoods(supabase: Db): Promise<number> {
+  const { count, error } = await supabase
+    .from("foods")
+    .select("id", { count: "exact", head: true })
+    .eq("is_public", true)
+    .eq("verification_status", "unverified");
+  if (error) throw dbError(error, "No se pudo leer la cola de verificación.");
+  return count ?? 0;
+}
