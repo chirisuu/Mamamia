@@ -70,7 +70,8 @@ mientras esté vigente.
 **brands** — id, name, name_normalized unique.
 
 **foods** — id, name, name_normalized, brand_id, description, food_type text (generic|branded|dish),
-barcode text unique null, country_codes text[] default '{}', energy_kcal numeric(7,2), protein_g
+barcode text null (único entre públicos y, aparte, por dueño entre propios — ver Notas),
+country_codes text[] default '{}', energy_kcal numeric(7,2), protein_g
 numeric(6,2), carbs_g numeric(6,2), fat_g numeric(6,2), fiber_g, sugar_g, saturated_fat_g
 numeric(6,2) null, sodium_mg numeric(8,2) null, density_g_per_ml numeric(5,3) null, source
 food_source, source_ref text, source_url text, license text, verification_status default
@@ -176,9 +177,9 @@ Nunca datos de tarjeta.
 (idempotencia de webhooks). Solo service role.
 
 ## Administración
-**app_settings** — key text pk, value jsonb, description, updated_by, updated_at. Claves:
-app_name, support_email, feature_flags, default_trial_days, maintenance_banner. Lectura pública
-de claves no sensibles; escritura admin.
+**app_settings** — key text pk, value jsonb, description, is_public boolean default true,
+updated_by, updated_at. Claves: app_name, support_email, feature_flags, default_trial_days,
+maintenance_banner. Lectura pública de claves con `is_public` (las sensibles: false); escritura admin.
 **content_pages** — id, slug unique, title, body_md, kind (faq|legal|landing_block|article),
 status (draft|published), sort_order, updated_by, updated_at.
 **admin_audit_logs** — id, actor_id, action, target_table, target_id text, metadata jsonb, created_at.
@@ -191,15 +192,91 @@ lee staff.
 ## Funciones
 - `has_role(role app_role) → boolean` (jerarquía superadmin ⊃ admin ⊃ editor).
 - `is_premium(uid uuid default auth.uid()) → boolean` (suscripción trialing/active vigente).
-- `consume_ai_quota(kind ai_request_kind) → jsonb {allowed, used, limit, plan}` atómica por usuario y mes.
+- `consume_ai_quota(kind ai_request_kind) → jsonb {allowed, used, limit, plan, request_id}` atómica por
+  usuario y mes. Si hay cupo **crea** la fila `pending` y devuelve su `request_id`.
+- `complete_ai_request(request_id, status, provider?, model?, output?, error_code?, tokens_input?,
+  tokens_output?, estimated_cost_usd?, latency_ms?, input_storage_path?) → boolean` (ver Notas).
 - `check_rate_limit(bucket text, max_hits int, window_seconds int) → boolean`.
 - `log_admin_action(action, target_table, target_id, metadata) → void`.
-- `admin_metrics() → jsonb` agregados sin PII (requiere admin).
+- `admin_metrics() → jsonb` agregados sin PII (requiere admin o service role; forma en Notas).
 - `get_shared_plan(token text) → jsonb`.
 - `search_foods(query text, max_results int default 20) → setof foods` (unaccent + trigram, públicos
   y propios).
+- `has_professional_access(target_user uuid, require_write boolean default false) → boolean`.
+- `register_push_subscription(sub_endpoint, sub_p256dh, sub_auth) → uuid`.
+- `normalize_text(text) → text` (sin tildes, minúsculas, espacios colapsados).
 - Triggers `set_updated_at`, `handle_new_user`.
 
 ## Storage
 Buckets privados `progress-photos`, `meal-photos` (ruta `{user_id}/…`, solo el dueño; se leen con
 URL firmada). Bucket público `recipe-images` (escritura staff o dueño en `{user_id}/…`).
+
+## Notas de implementación (migraciones `20261013000001…012`)
+Cambios y precisiones respecto al contrato original, con su motivo. Las migraciones mandan.
+
+**Cambios al contrato**
+- **`foods.barcode`**: en vez de `unique` global hay dos índices únicos parciales:
+  `(barcode) where is_public` y `(created_by, barcode) where not is_public`. Motivo: con un único
+  global, un alimento propio con código X bloqueaba cargar después el público con ese código y
+  revelaba a otros usuarios qué códigos existen. Para upserts del catálogo usa
+  `on conflict (barcode) where is_public and barcode is not null do …`.
+  El código debe cumplir `^[0-9]{6,14}$`.
+- **`app_settings.is_public`** (nuevo, default true): define qué claves lee anon/authenticated.
+- **Flujo de IA**: `consume_ai_quota` crea la fila `pending` (o una `rejected_quota` con
+  `error_code='quota_exceeded'`, que no cuenta) y devuelve `request_id`. El usuario **no** puede
+  escribir `ai_analysis_requests` (si pudiera, se liberaría cupo a sí mismo); el servidor cierra la
+  solicitud con `complete_ai_request(request_id, 'succeeded'|'failed'|'not_configured', …)`, que solo
+  pasa `pending` → final una vez y solo para el dueño. **Si devuelve false, no entregues el
+  resultado.** El mes se cuenta en la zona horaria del perfil. Una clave ausente en
+  `plans.ai_monthly_limits` vale 0 (hoy `plan` no tiene cupo en ningún plan).
+- **Profesionales** también leen `profiles` y `nutrition_targets` del usuario con acceso vigente
+  (necesarios para proponer metas), además de `meal_logs`, `meal_log_items`, `weight_logs` y
+  `user_goals`. `professional_access` solo acepta cuentas con rol `professional` (trigger) y
+  `scope` ∈ (`read_logs`, `read_logs_write_targets`); escribir metas exige el segundo.
+- **`push_subscriptions.endpoint`** sigue siendo único global; para que el mismo navegador pase de una
+  cuenta a otra, registra con `register_push_subscription()` (reasigna el endpoint al usuario actual).
+
+**Precisiones**
+- `foods.name_normalized`, `foods.search` y `brands.name_normalized` los mantiene un trigger (no
+  hace falta enviarlos; si se envían, se sobrescriben). `search` no es columna generada porque incluye
+  el nombre de la marca (otra tabla).
+- Alimento propio: `created_by = auth.uid()`, `is_public = false`, `verification_status =
+  'unverified'`, `source` ∈ (`user`, `open_food_facts`, `usda`). `curated`/`admin`, verificar y
+  publicar es solo staff.
+- Recetas: el dueño solo guarda `status` `draft` o `pending_review` (si edita una publicada debe
+  devolverla a `pending_review`); `reviewed_by/at` los fija solo el staff (trigger). Una receta
+  `published` + `is_public` solo puede usar alimentos públicos (trigger, error 23514).
+  `recipe_nutrition` además expone `ingredients_count`, `total_grams`, `per_serving_grams` y
+  `fiber_incomplete` (algún ingrediente sin fibra → el total es un mínimo).
+- `daily_nutrition_totals` solo lista días con al menos un ítem.
+- `consents` es historial: solo SELECT e INSERT (revocar = nueva fila con `granted=false`).
+- `subscriptions`/`payments`: el dueño y los admin leen; INSERT/UPDATE/DELETE revocados para
+  anon/authenticated (solo service role). `billing_events`, `rate_limits`: sin acceso desde la API.
+  Admin también lee `profiles`.
+- `error_reports`: límite de 20/h por IP (anon) y 60/h por usuario; al pasarlo responde HTTP 429
+  (SQLSTATE `PT429`). El service role no tiene límite.
+- `check_rate_limit`: la clave es `bucket + usuario`; para anon `bucket + IP` (x-forwarded-for);
+  con service role la clave es `bucket` tal cual (arma tú `'signup:ip:1.2.3.4'`).
+- `is_premium(uid)`: un usuario solo puede consultarse a sí mismo (admin y service role, a
+  cualquiera). Vigente = status trialing/active y fin de prueba/periodo en el futuro (o sin fecha).
+- `admin_metrics()` devuelve: `generated_at`, `timezone` ('America/Lima'), `month_start`,
+  `users_total`, `users_new_7d`, `users_new_30d`, `users_active_7d`, `users_active_30d` (registró
+  comida), `premium_active` (trialing+active vigentes), `premium_trialing`, `premium_paying`,
+  `conversion_rate` (= premium_paying / users_total, 4 decimales), `revenue_month_cents`
+  (`{"PEN": n, …}` de pagos `succeeded` del mes), `cancellations_month`, `ai_requests_month`
+  (pending+succeeded+failed), `ai_requests_by_kind`, `ai_requests_by_status`, `ai_cost_usd_month`.
+- `get_shared_plan(token)` devuelve `{name, start_date, days, shared_at, items:[{day_index,
+  meal_type, position, recipe:{title, slug|null}|null, food:{name}|null, servings, grams,
+  energy_kcal, protein_g, carbs_g, fat_g}]}` o null; nunca `user_id` ni ids.
+- Al borrar una cuenta (trigger en `auth.users`) se borran sus recetas y sus alimentos propios no
+  usados en recetas ajenas; los públicos que creó quedan con `created_by = null`. **Los archivos de
+  Storage no se borran solos**: el flujo de eliminación de cuenta debe vaciar `{user_id}/` en los
+  buckets con la API de Storage.
+- `profiles.timezone` se valida contra las zonas de Postgres (error 22023 si no existe).
+- Tablas sin marcas de tiempo en este documento llevan `created_at`/`updated_at` (regla general).
+  Se agregaron checks de rango razonables (p. ej. `weekly_rate_kg` 0–2, `nutrition_targets.energy_kcal`
+  500–10000, `meal_type='custom'` exige `custom_name`, ayuno no activo exige `ended_at`).
+- Storage: `recipe-images` (público, 10 MB, `image/*`) lo escribe el staff en cualquier ruta o el
+  usuario en `{user_id}/…`. `progress-photos` y `meal-photos`: 10 MB, `image/*`, solo el dueño.
+- Seeds: `supabase/seed/00_base.sql` (config: `./seed/*.sql`). Precios de Premium iniciales y
+  editables: PEN 2990/19990, USD 799/5499 céntimos, 7 días de prueba.
