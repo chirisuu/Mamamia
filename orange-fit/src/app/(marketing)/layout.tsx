@@ -1,24 +1,10 @@
 import type * as React from "react";
-import type { Metadata } from "next";
 import { Info } from "lucide-react";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { SiteHeader } from "@/components/marketing/site-header";
-import { RegisterServiceWorker } from "@/components/pwa/register-sw";
 import { getAppSettings } from "@/lib/config/app-settings";
 
-export const metadata: Metadata = {
-  // Iconos generados por scripts/generate-icons.mjs (el layout raíz aún no los declara).
-  icons: {
-    icon: [
-      { url: "/favicon.ico", sizes: "48x48" },
-      { url: "/icons/logo.svg", type: "image/svg+xml" },
-      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
-    ],
-    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
-  },
-};
-
-/** Sitio público: encabezado, contenido y pie legal. Registra el service worker (PWA). */
+/** Sitio público: encabezado, contenido y pie legal. */
 export default async function MarketingLayout({ children }: { children: React.ReactNode }) {
   const { appName, supportEmail, maintenanceBanner } = await getAppSettings();
 
@@ -43,7 +29,6 @@ export default async function MarketingLayout({ children }: { children: React.Re
         {children}
       </main>
       <SiteFooter appName={appName} supportEmail={supportEmail} />
-      <RegisterServiceWorker />
     </div>
   );
 }

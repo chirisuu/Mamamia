@@ -1,5 +1,6 @@
 "use server";
 
+import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { addItemsToMeal, LogItemsError } from "@/features/diary/server/log-items";
 import { fail, invalid, ok, type ActionResult } from "@/lib/action-result";
@@ -8,6 +9,7 @@ import { DEFAULT_TIMEZONE, todayInTz } from "@/lib/dates";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isLoggableDate, mealDisplayName } from "./lib/meals";
 import { logBarcodeFoodSchema, type LogBarcodeFoodInput } from "./schemas";
+import { syncAchievementsSafely } from "@/features/gamification/server/sync";
 
 /**
  * Registra en el diario un alimento encontrado por código de barras (source 'barcode').
@@ -40,6 +42,7 @@ export async function logBarcodeFoodAction(
     revalidatePath(`/app/diario/${v.localDate}`);
     revalidatePath("/app/diario");
     revalidatePath("/app");
+    after(() => syncAchievementsSafely(supabase, user.id, today));
     return ok({ itemIds, localDate: v.localDate, mealLabel: mealDisplayName(v.mealType, customName) });
   } catch (error) {
     if (error instanceof LogItemsError) {

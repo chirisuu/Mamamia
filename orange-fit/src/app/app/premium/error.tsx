@@ -3,9 +3,11 @@
 import { AppHeader } from "@/components/app/app-header";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { useReportError } from "@/features/marketing/use-report-error";
 
 /** Error al cargar Premium o la confirmación del pago: lo decimos y ofrecemos reintentar. */
-export default function PremiumError({ retry }: { error: Error & { digest?: string }; retry: () => void }) {
+export default function PremiumError({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
+  useReportError(error);
   return (
     <>
       <AppHeader title="Premium" backHref="/app/perfil" backLabel="Volver a Perfil" />

@@ -1,5 +1,6 @@
 "use server";
 
+import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { CONSENT_VERSION } from "@/features/auth/consents";
 import { mealLabel } from "@/features/diary/lib/day-totals";
@@ -10,6 +11,7 @@ import { getProfile, requireUser } from "@/lib/auth/session";
 import { DEFAULT_TIMEZONE, todayInTz } from "@/lib/dates";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { confirmAiItemsSchema, SOURCE_KIND, type ConfirmAiItemsInput } from "./schemas";
+import { syncAchievementsSafely } from "@/features/gamification/server/sync";
 
 /**
  * Registra en el diario lo que la persona CONFIRMÓ tras un análisis con IA. Es el único camino
@@ -69,6 +71,7 @@ export async function confirmAiItemsAction(
       })),
     });
     revalidatePath("/app", "layout");
+    after(() => syncAchievementsSafely(supabase, user.id, today));
     return ok({ localDate: input.localDate, mealLabel: mealLabel(input.mealType, customName), count: res.itemIds.length });
   } catch (e) {
     if (e instanceof LogItemsError) return fail(e.code, e.message);

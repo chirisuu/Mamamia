@@ -207,6 +207,4 @@ rotarlo ni añadirle efectos. Tamaño mínimo de la marca: 20 px.
 - Iconos `lucide-react` (`size-5` por defecto en botones), siempre `aria-hidden` si hay texto.
 
 ## 11. Pendientes conocidos
-- `src/app/layout.tsx` declara `manifest: "/manifest.webmanifest"`, pero el manifest, los iconos
-  PWA y las imágenes OG los crea el módulo de PWA/landing (fase 7); hasta entonces esa URL da 404.
 - `themeColor` sigue la preferencia del sistema (meta `media`), no el tema elegido manualmente.

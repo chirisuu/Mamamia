@@ -12,8 +12,7 @@ export const RECIPES_PER_PAGE = 30;
 type RecipeRow = Tables<"recipes">;
 type RecipeStatus = RecipeRow["status"];
 
-/** `review_note` viene de la migración 20261013100801 (los tipos generados aún no la tienen). */
-export type AdminRecipeRow = RecipeRow & { review_note?: string | null };
+export type AdminRecipeRow = RecipeRow;
 
 export type AdminRecipeListItem = Pick<RecipeRow, "id" | "title" | "slug" | "status" | "is_public" | "updated_at" | "image_path"> & {
   isOfficial: boolean;
@@ -106,7 +105,7 @@ export async function getAdminRecipe(supabase: Db, id: string): Promise<AdminRec
     } | null;
   };
   return {
-    recipe: recipe as AdminRecipeRow,
+    recipe,
     isOfficial: recipe.owner_id == null,
     ingredients: ((ings ?? []) as unknown as IngRow[]).map((r) => ({
       id: r.id,

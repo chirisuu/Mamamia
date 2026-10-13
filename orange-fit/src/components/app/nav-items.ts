@@ -1,6 +1,7 @@
 import {
   Activity,
   Apple,
+  Bell,
   CalendarDays,
   Camera,
   ChartLine,
@@ -46,6 +47,7 @@ export const APP_SECONDARY_NAV: readonly NavItem[] = [
   { href: "/app/compras", label: "Compras", icon: ShoppingBasket },
   { href: "/app/asistente", label: "Asistente", icon: Sparkles },
   { href: "/app/logros", label: "Logros", icon: Trophy },
+  { href: "/app/notificaciones", label: "Notificaciones", icon: Bell },
 ];
 
 /** Accesos del botón "+". Lo que viene de IA nunca se guarda sin confirmación (ver CONVENTIONS). */

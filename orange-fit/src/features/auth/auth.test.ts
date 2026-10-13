@@ -1,8 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { callbackUrl, confirmUrl, safeNext } from "./redirect";
+import { callbackUrl, confirmUrl, nextFromRedirectTo, safeNext } from "./redirect";
 import { authErrorMessage, isRateLimited, RATE_LIMIT_MESSAGE } from "./errors";
 import { loginSchema, newPasswordSchema, registerSchema } from "./schemas";
 import { CONSENT_VERSION, isConsentActive, latestConsents, parseSignupConsents, type ConsentRow } from "./consents";
+
+describe("nextFromRedirectTo", () => {
+  it("toma el next de la URL de retorno que manda la plantilla de correo", () => {
+    expect(nextFromRedirectTo("http://localhost:3000/auth/confirm?next=%2Fonboarding")).toBe("/onboarding");
+    expect(nextFromRedirectTo("http://localhost:3000/auth/confirm")).toBeNull();
+  });
+
+  it("ignora valores vacíos o que no son URL; el destino siempre pasa luego por safeNext", () => {
+    expect(nextFromRedirectTo(null)).toBeNull();
+    expect(nextFromRedirectTo("")).toBeNull();
+    expect(nextFromRedirectTo("no es una url")).toBeNull();
+    expect(safeNext(nextFromRedirectTo("http://localhost:3000/auth/confirm?next=https%3A%2F%2Fmalo.example"))).toBe("/app");
+  });
+});
 
 describe("safeNext", () => {
   it("acepta rutas internas con query y hash", () => {

@@ -32,6 +32,8 @@ vi.mock("next/headers", () => ({
   }),
 }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn() }));
+// after() solo existe dentro de una petición de Next; aquí las acciones se llaman directo.
+vi.mock("next/server", async (importOriginal) => ({ ...(await importOriginal<typeof import("next/server")>()), after: vi.fn() }));
 
 const sdk = vi.hoisted(() => ({ parse: vi.fn(), stream: vi.fn(), ctor: vi.fn() }));
 vi.mock("@anthropic-ai/sdk", async (importOriginal) => {

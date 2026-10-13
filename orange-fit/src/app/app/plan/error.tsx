@@ -3,9 +3,11 @@
 import { AppHeader } from "@/components/app/app-header";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { useReportError } from "@/features/marketing/use-report-error";
 
 /** Error al cargar el plan: lo decimos y ofrecemos reintentar. */
-export default function PlanError({ retry }: { error: Error & { digest?: string }; retry: () => void }) {
+export default function PlanError({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
+  useReportError(error);
   return (
     <>
       <AppHeader title="Plan de comidas" backHref="/app/plan" />

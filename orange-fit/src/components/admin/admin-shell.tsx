@@ -24,21 +24,24 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { isNavItemActive, type NavItem } from "@/components/app/nav-items";
 import { cn } from "@/lib/utils";
 
-const ADMIN_NAV: readonly NavItem[] = [
+/** `adminOnly`: la página exige rol admin (un editor recibiría 404), así que no se le muestra. */
+const ADMIN_NAV: readonly (NavItem & { adminOnly?: boolean })[] = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { href: "/admin/usuarios", label: "Usuarios", icon: Users },
+  { href: "/admin/usuarios", label: "Usuarios", icon: Users, adminOnly: true },
   { href: "/admin/alimentos", label: "Alimentos", icon: Apple },
   { href: "/admin/recetas", label: "Recetas", icon: ChefHat },
   { href: "/admin/contenidos", label: "Contenidos", icon: Newspaper },
-  { href: "/admin/planes", label: "Planes y precios", icon: CreditCard },
-  { href: "/admin/ia", label: "IA", icon: Bot },
-  { href: "/admin/configuracion", label: "Configuración", icon: Settings },
-  { href: "/admin/auditoria", label: "Auditoría", icon: ScrollText },
-  { href: "/admin/errores", label: "Errores", icon: Bug },
+  { href: "/admin/planes", label: "Planes y precios", icon: CreditCard, adminOnly: true },
+  { href: "/admin/ia", label: "IA", icon: Bot, adminOnly: true },
+  { href: "/admin/configuracion", label: "Configuración", icon: Settings, adminOnly: true },
+  { href: "/admin/auditoria", label: "Auditoría", icon: ScrollText, adminOnly: true },
+  { href: "/admin/errores", label: "Errores", icon: Bug, adminOnly: true },
 ];
 
 type AdminShellProps = {
   appName: string;
+  /** ¿Tiene rol admin (o superadmin)? Un editor solo ve alimentos, recetas y contenidos. */
+  isAdmin: boolean;
   children: React.ReactNode;
 };
 
@@ -46,7 +49,7 @@ type AdminShellProps = {
  * Marco del panel admin. Escritorio: barra lateral fija. Móvil/tablet: barra superior con
  * menú en sheet lateral. La autorización (requireRole) la hace el layout de /admin, no este componente.
  */
-export function AdminShell({ appName, children }: AdminShellProps) {
+export function AdminShell({ appName, isAdmin, children }: AdminShellProps) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = React.useState(false);
 
@@ -69,7 +72,7 @@ export function AdminShell({ appName, children }: AdminShellProps) {
           </Link>
           <Badge variant="secondary">Admin</Badge>
         </div>
-        <AdminNav pathname={pathname} className="flex-1 overflow-y-auto px-3 pb-6" />
+        <AdminNav pathname={pathname} isAdmin={isAdmin} className="flex-1 overflow-y-auto px-3 pb-6" />
         <div className="flex items-center justify-between border-t border-border px-5 py-3">
           <Link href="/app" className="rounded-md text-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">
             Ir a la app
@@ -94,7 +97,7 @@ export function AdminShell({ appName, children }: AdminShellProps) {
                 <Badge variant="secondary">Admin</Badge>
                 <SheetDescription className="sr-only">Secciones del panel de administración</SheetDescription>
               </SheetHeader>
-              <AdminNav pathname={pathname} className="px-3 pb-safe-6" onNavigate={() => setMenuOpen(false)} />
+              <AdminNav pathname={pathname} isAdmin={isAdmin} className="px-3 pb-safe-6" onNavigate={() => setMenuOpen(false)} />
             </SheetContent>
           </Sheet>
           <Link href="/admin" className="rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring">
@@ -120,17 +123,19 @@ export function AdminShell({ appName, children }: AdminShellProps) {
 
 function AdminNav({
   pathname,
+  isAdmin,
   className,
   onNavigate,
 }: {
   pathname: string | null;
+  isAdmin: boolean;
   className?: string;
   onNavigate?: () => void;
 }) {
   return (
     <nav aria-label="Administración" className={className}>
       <ul className="flex flex-col gap-1">
-        {ADMIN_NAV.map((item) => {
+        {ADMIN_NAV.filter((item) => isAdmin || !item.adminOnly).map((item) => {
           const active = isNavItemActive(pathname, item);
           const Icon = item.icon;
           return (

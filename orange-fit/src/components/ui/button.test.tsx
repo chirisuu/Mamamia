@@ -39,6 +39,7 @@ describe("Button", () => {
   it("con asChild renderiza el hijo (enlace) con los estilos y aria-disabled al cargar", () => {
     render(
       <Button asChild loading>
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- prueba asChild con un <a> plano a propósito */}
         <a href="/app/diario">Ir al diario</a>
       </Button>,
     );

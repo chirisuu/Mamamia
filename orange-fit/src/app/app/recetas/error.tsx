@@ -3,9 +3,11 @@
 import { AppHeader } from "@/components/app/app-header";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { useReportError } from "@/features/marketing/use-report-error";
 
 /** Error al cargar recetas: lo decimos y ofrecemos reintentar. */
-export default function RecipesError({ retry }: { error: Error & { digest?: string }; retry: () => void }) {
+export default function RecipesError({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
+  useReportError(error);
   return (
     <>
       <AppHeader title="Recetas" backHref="/app/recetas" />

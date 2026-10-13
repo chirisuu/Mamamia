@@ -667,14 +667,14 @@ isOneToOne: false
                   ]
                 },"recipes": {
                   Row: {
-                    "allergens": (string)[],"cook_minutes": number | null,"cost_currency": string | null,"country_code": string | null,"created_at": string,"description": string | null,"diet_tags": (string)[],"difficulty": string | null,"estimated_cost": number | null,"id": string,"image_path": string | null,"is_public": boolean,"meal_types": (Database["public"]['Enums']["meal_type"])[],"owner_id": string | null,"prep_minutes": number | null,"reviewed_at": string | null,"reviewed_by": string | null,"servings": number,"slug": string,"status": Database["public"]['Enums']["recipe_status"],"steps": NonNullable<Json>,"tags": (string)[],"title": string,"updated_at": string
+                    "allergens": (string)[],"cook_minutes": number | null,"cost_currency": string | null,"country_code": string | null,"created_at": string,"description": string | null,"diet_tags": (string)[],"difficulty": string | null,"estimated_cost": number | null,"id": string,"image_path": string | null,"is_public": boolean,"meal_types": (Database["public"]['Enums']["meal_type"])[],"owner_id": string | null,"prep_minutes": number | null,"review_note": string | null,"reviewed_at": string | null,"reviewed_by": string | null,"servings": number,"slug": string,"status": Database["public"]['Enums']["recipe_status"],"steps": NonNullable<Json>,"tags": (string)[],"title": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "allergens"?: (string)[],"cook_minutes"?: number | null,"cost_currency"?: string | null,"country_code"?: string | null,"created_at"?: string,"description"?: string | null,"diet_tags"?: (string)[],"difficulty"?: string | null,"estimated_cost"?: number | null,"id"?: string,"image_path"?: string | null,"is_public"?: boolean,"meal_types"?: (Database["public"]['Enums']["meal_type"])[],"owner_id"?: string | null,"prep_minutes"?: number | null,"reviewed_at"?: string | null,"reviewed_by"?: string | null,"servings"?: number,"slug": string,"status"?: Database["public"]['Enums']["recipe_status"],"steps"?: NonNullable<Json>,"tags"?: (string)[],"title": string,"updated_at"?: string
+                    "allergens"?: (string)[],"cook_minutes"?: number | null,"cost_currency"?: string | null,"country_code"?: string | null,"created_at"?: string,"description"?: string | null,"diet_tags"?: (string)[],"difficulty"?: string | null,"estimated_cost"?: number | null,"id"?: string,"image_path"?: string | null,"is_public"?: boolean,"meal_types"?: (Database["public"]['Enums']["meal_type"])[],"owner_id"?: string | null,"prep_minutes"?: number | null,"review_note"?: string | null,"reviewed_at"?: string | null,"reviewed_by"?: string | null,"servings"?: number,"slug": string,"status"?: Database["public"]['Enums']["recipe_status"],"steps"?: NonNullable<Json>,"tags"?: (string)[],"title": string,"updated_at"?: string
                   }
                   Update: {
-                    "allergens"?: (string)[],"cook_minutes"?: number | null,"cost_currency"?: string | null,"country_code"?: string | null,"created_at"?: string,"description"?: string | null,"diet_tags"?: (string)[],"difficulty"?: string | null,"estimated_cost"?: number | null,"id"?: string,"image_path"?: string | null,"is_public"?: boolean,"meal_types"?: (Database["public"]['Enums']["meal_type"])[],"owner_id"?: string | null,"prep_minutes"?: number | null,"reviewed_at"?: string | null,"reviewed_by"?: string | null,"servings"?: number,"slug"?: string,"status"?: Database["public"]['Enums']["recipe_status"],"steps"?: NonNullable<Json>,"tags"?: (string)[],"title"?: string,"updated_at"?: string
+                    "allergens"?: (string)[],"cook_minutes"?: number | null,"cost_currency"?: string | null,"country_code"?: string | null,"created_at"?: string,"description"?: string | null,"diet_tags"?: (string)[],"difficulty"?: string | null,"estimated_cost"?: number | null,"id"?: string,"image_path"?: string | null,"is_public"?: boolean,"meal_types"?: (Database["public"]['Enums']["meal_type"])[],"owner_id"?: string | null,"prep_minutes"?: number | null,"review_note"?: string | null,"reviewed_at"?: string | null,"reviewed_by"?: string | null,"servings"?: number,"slug"?: string,"status"?: Database["public"]['Enums']["recipe_status"],"steps"?: NonNullable<Json>,"tags"?: (string)[],"title"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     
@@ -921,7 +921,13 @@ isOneToOne: false
                 }
           }
           Functions: {
-            "admin_metrics":
+            "admin_ai_usage":
+{ Args: { "months"?: number }; Returns: Json
+                           },
+"admin_merge_foods":
+{ Args: { "drop_id": string,"keep_id": string }; Returns: Json
+                           },
+"admin_metrics":
 { Args: Record<PropertyKey, never>; Returns: Json
                            },
 "check_rate_limit":

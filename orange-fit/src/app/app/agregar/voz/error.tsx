@@ -4,9 +4,11 @@ import Link from "next/link";
 import { AppHeader } from "@/components/app/app-header";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { useReportError } from "@/features/marketing/use-report-error";
 
 /** Error al cargar la pantalla: no se registró nada; se ofrece reintentar o buscar por nombre. */
-export default function AiLogError({ retry }: { error: Error & { digest?: string }; retry: () => void }) {
+export default function AiLogError({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
+  useReportError(error);
   return (
     <>
       <AppHeader title="Dicta lo que comiste" backHref="/app/agregar" />

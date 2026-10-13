@@ -3,9 +3,11 @@
 import { AppHeader } from "@/components/app/app-header";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { useReportError } from "@/features/marketing/use-report-error";
 
 /** Error al cargar la lista: lo decimos y ofrecemos reintentar. */
-export default function ShoppingError({ retry }: { error: Error & { digest?: string }; retry: () => void }) {
+export default function ShoppingError({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
+  useReportError(error);
   return (
     <>
       <AppHeader title="Lista de compras" backHref="/app/compras" />

@@ -3,9 +3,11 @@
 import { AppHeader } from "@/components/app/app-header";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { useReportError } from "@/features/marketing/use-report-error";
 
 /** Error al cargar una pantalla del perfil: lo decimos y ofrecemos reintentar. */
-export default function ProfileError({ retry }: { error: Error & { digest?: string }; retry: () => void }) {
+export default function ProfileError({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
+  useReportError(error);
   return (
     <>
       <AppHeader title="Perfil" backHref="/app/perfil" />

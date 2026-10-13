@@ -1,5 +1,6 @@
 "use server";
 
+import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import type { z } from "zod";
 import { fail, invalid, ok, type ActionResult } from "@/lib/action-result";
@@ -51,6 +52,7 @@ import {
   updateItemQuantity,
 } from "./server/diary-ops";
 import { createOwnFood, deleteOwnFood, OwnFoodError, updateOwnFood } from "./server/own-foods";
+import { syncAchievementsSafely } from "@/features/gamification/server/sync";
 
 /**
  * Server Actions del diario. Cada una: sesión (requireUser) → Zod → escritura con el cliente
@@ -106,6 +108,7 @@ export async function logFoodAction(input: LogFoodInput): Promise<ActionResult<{
       items: [{ kind: "food", foodId: d.foodId, grams: d.grams, quantity: d.quantity, unit: d.unit, source: d.source }],
     });
     revalidateApp();
+    after(() => syncAchievementsSafely(supabase, user.id, today));
     return ok({ itemIds: res.itemIds, mealLabel: mealLabel(d.mealType, d.customName ?? null), localDate: d.localDate });
   } catch (e) {
     return toFailure(e, "logFood");
@@ -127,6 +130,7 @@ export async function logManualAction(input: LogManualInput): Promise<ActionResu
       items: [{ kind: "manual", name: d.name, energyKcal: d.energyKcal, proteinG: d.proteinG, carbsG: d.carbsG, fatG: d.fatG, source: "manual" }],
     });
     revalidateApp();
+    after(() => syncAchievementsSafely(supabase, user.id, today));
     return ok({ mealLabel: mealLabel(d.mealType, d.customName ?? null), localDate: d.localDate });
   } catch (e) {
     return toFailure(e, "logManual");

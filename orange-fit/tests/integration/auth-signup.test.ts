@@ -7,7 +7,7 @@ import { CONSENT_VERSION } from "@/features/auth/consents";
 import { recordSignupConsents } from "@/features/auth/server/signup-consents";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/db/database.types";
-import { safeNext } from "@/features/auth/redirect";
+import { nextFromRedirectTo, safeNext } from "@/features/auth/redirect";
 import { anonClient, serviceClient, SUPABASE_URL, uniqueTag } from "./helpers";
 
 const MAILPIT = "http://127.0.0.1:54324";
@@ -34,6 +34,13 @@ async function waitForEmail(to: string, timeoutMs = 15_000): Promise<string> {
     await new Promise((r) => setTimeout(r, 300));
   }
   throw new Error(`No llegó el correo para ${to}`);
+}
+
+/** Enlace a /auth/confirm del correo (plantillas de supabase/templates). */
+function confirmLink(mail: string): URL {
+  const raw = /https?:\/\/[^\s"'<>]+\/auth\/confirm\?[^\s"'<>]+/.exec(mail)?.[0]?.replace(/&amp;/g, "&");
+  if (!raw) throw new Error("El correo no trae un enlace a /auth/confirm");
+  return new URL(raw);
 }
 
 describe("registro con correo y confirmación (GoTrue + Mailpit locales)", () => {
@@ -74,15 +81,16 @@ describe("registro con correo y confirmación (GoTrue + Mailpit locales)", () =>
     expect(authErrorMessage(early.error, "login")).toMatch(/confirmaste/);
 
     const mail = await waitForEmail(email);
-    const link = /https?:\/\/[^\s"'<>]+\/verify\?[^\s"'<>]+/.exec(mail)?.[0]?.replace(/&amp;/g, "&");
-    expect(link).toBeTruthy();
-    // El enlace del correo vuelve a /auth/confirm con el destino posterior (onboarding).
-    const redirectTo = new URL(link!).searchParams.get("redirect_to")!;
-    expect(redirectTo.startsWith("http://localhost:3000/auth/confirm")).toBe(true);
-    expect(new URL(redirectTo).searchParams.get("next")).toBe("/onboarding");
-    const verify = await fetch(link!, { redirect: "manual" });
-    expect([302, 303]).toContain(verify.status);
-    expect(verify.headers.get("location")).toMatch(/^http:\/\/localhost:3000\/auth\/confirm/);
+    const link = confirmLink(mail);
+    // Plantilla de supabase/templates/confirmation.html: va directo a /auth/confirm con token_hash
+    // y el destino posterior (onboarding) dentro de redirect_to.
+    expect(link.pathname).toBe("/auth/confirm");
+    expect(link.searchParams.get("type")).toBe("email");
+    expect(safeNext(nextFromRedirectTo(link.searchParams.get("redirect_to")))).toBe("/onboarding");
+    // Lo mismo que hace /auth/confirm en el servidor.
+    const confirmed = await anonClient().auth.verifyOtp({ type: "email", token_hash: link.searchParams.get("token_hash")! });
+    expect(confirmed.error).toBeNull();
+    expect(confirmed.data.session).not.toBeNull();
 
     const signed = await anon.auth.signInWithPassword({ email, password });
     expect(signed.error).toBeNull();
@@ -97,16 +105,15 @@ describe("registro con correo y confirmación (GoTrue + Mailpit locales)", () =>
     }
   });
 
-  it("recuperación con PKCE (como el navegador): el enlace vuelve a /auth/confirm?next=/nueva-clave con un código canjeable", async () => {
+  it("recuperación con token_hash: el enlace funciona aunque se abra en otro navegador", async () => {
     const email = `it-reset-${uniqueTag()}@example.com`;
     const oldPassword = `Pw-${randomUUID()}`;
     const createdUser = await admin.auth.admin.createUser({ email, password: oldPassword, email_confirm: true });
     created.push(createdUser.data.user!.id);
 
-    // Cliente PKCE con almacenamiento en memoria (equivale a las cookies del navegador).
+    // Navegador A pide el correo (cliente PKCE, como @supabase/ssr).
     const memory = new Map<string, string>();
-    const anonKey = readAnonKey();
-    const browserLike = createClient<Database>(SUPABASE_URL, anonKey, {
+    const browserA = createClient<Database>(SUPABASE_URL, readAnonKey(), {
       auth: {
         flowType: "pkce",
         persistSession: true,
@@ -119,24 +126,21 @@ describe("registro con correo y confirmación (GoTrue + Mailpit locales)", () =>
         },
       },
     });
-    const reset = await browserLike.auth.resetPasswordForEmail(email, {
+    const reset = await browserA.auth.resetPasswordForEmail(email, {
       redirectTo: "http://localhost:3000/auth/confirm?next=%2Fnueva-clave",
     });
     expect(reset.error).toBeNull();
 
-    const mail = await waitForEmail(email);
-    const link = /https?:\/\/[^\s"'<>]+\/verify\?[^\s"'<>]+/.exec(mail)?.[0]?.replace(/&amp;/g, "&");
-    const verify = await fetch(link!, { redirect: "manual" });
-    const location = new URL(verify.headers.get("location")!);
-    expect(location.pathname).toBe("/auth/confirm");
-    expect(safeNext(location.searchParams.get("next"), "/nueva-clave")).toBe("/nueva-clave");
-    const code = location.searchParams.get("code");
-    expect(code).toBeTruthy();
+    const link = confirmLink(await waitForEmail(email));
+    expect(link.pathname).toBe("/auth/confirm");
+    expect(link.searchParams.get("type")).toBe("recovery");
 
-    const exchanged = await browserLike.auth.exchangeCodeForSession(code!);
-    expect(exchanged.error).toBeNull();
+    // Navegador B (sin el verificador PKCE de A) abre el enlace: /auth/confirm hace verifyOtp.
+    const browserB = anonClient();
+    const verified = await browserB.auth.verifyOtp({ type: "recovery", token_hash: link.searchParams.get("token_hash")! });
+    expect(verified.error).toBeNull();
     const newPassword = `Pw-${randomUUID()}`;
-    const updated = await browserLike.auth.updateUser({ password: newPassword });
+    const updated = await browserB.auth.updateUser({ password: newPassword });
     expect(updated.error).toBeNull();
     const again = await anonClient().auth.signInWithPassword({ email, password: newPassword });
     expect(again.error).toBeNull();

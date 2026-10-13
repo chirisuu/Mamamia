@@ -79,7 +79,7 @@ export async function transcribeAudio(
   if (env.TRANSCRIPTION_PROVIDER !== "openai" || !env.OPENAI_API_KEY) {
     throw new TranscriptionError("TRANSCRIPTION_NOT_CONFIGURED", 503, "La transcripción de voz en el servidor está pendiente de configurar.");
   }
-  const model = process.env.OPENAI_TRANSCRIPTION_MODEL?.trim() || DEFAULT_MODEL;
+  const model = env.OPENAI_TRANSCRIPTION_MODEL?.trim() || DEFAULT_MODEL;
   const type = baseAudioType(audio.type || "audio/webm");
   const form = new FormData();
   form.append("file", new File([audio], `dictado.${EXTENSIONS[type] ?? "webm"}`, { type }));

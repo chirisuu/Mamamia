@@ -4,9 +4,11 @@ import Link from "next/link";
 import { AppHeader } from "@/components/app/app-header";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { useReportError } from "@/features/marketing/use-report-error";
 
 /** Error al cargar el escáner: se dice qué pasó y se ofrece reintentar o buscar por nombre. */
-export default function BarcodeError({ retry }: { error: Error & { digest?: string }; retry: () => void }) {
+export default function BarcodeError({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
+  useReportError(error);
   return (
     <>
       <AppHeader title="Código de barras" backHref="/app/agregar" />

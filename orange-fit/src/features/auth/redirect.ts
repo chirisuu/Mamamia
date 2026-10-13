@@ -45,3 +45,16 @@ export function callbackUrl(siteUrl: string, next?: string | null): string {
   if (next) url.searchParams.set("next", safeNext(next));
   return url.toString();
 }
+
+/**
+ * Las plantillas de correo (supabase/templates) mandan el destino dentro de `redirect_to`
+ * (`…/auth/confirm?next=…`). Devuelve ese `next` sin sanear: pásalo por `safeNext`.
+ */
+export function nextFromRedirectTo(value: string | null | undefined): string | null {
+  if (!value) return null;
+  try {
+    return new URL(value).searchParams.get("next");
+  } catch {
+    return null;
+  }
+}

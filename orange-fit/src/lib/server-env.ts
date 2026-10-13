@@ -10,6 +10,7 @@ const serverSchema = z.object({
   AI_MODEL_CHAT: z.string().min(1).default("claude-opus-5-5"),
   TRANSCRIPTION_PROVIDER: z.enum(["none", "openai"]).default("none"),
   OPENAI_API_KEY: z.string().min(1).optional(),
+  OPENAI_TRANSCRIPTION_MODEL: z.string().min(1).optional(),
   STRIPE_SECRET_KEY: z.string().min(1).optional(),
   STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
   MERCADOPAGO_ACCESS_TOKEN: z.string().min(1).optional(),

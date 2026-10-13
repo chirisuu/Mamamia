@@ -2,20 +2,10 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/env";
-import { safeNext } from "@/features/auth/redirect";
+import { nextFromRedirectTo, safeNext } from "@/features/auth/redirect";
 import { recordSignupConsents } from "@/features/auth/server/signup-consents";
 
 const OTP_TYPES = new Set<string>(["signup", "invite", "magiclink", "recovery", "email_change", "email"]);
-
-/** Las plantillas mandan el destino dentro de redirect_to (`…/auth/confirm?next=…`); safeNext lo sanea. */
-function nextFromRedirectTo(value: string | null): string | null {
-  if (!value) return null;
-  try {
-    return new URL(value).searchParams.get("next");
-  } catch {
-    return null;
-  }
-}
 
 /**
  * Enlaces de los correos de Supabase (confirmación de cuenta, recuperación de contraseña).

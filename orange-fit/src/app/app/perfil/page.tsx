@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Crown, FileText, Moon, ShieldCheck, Stethoscope, Target, UserRound, LogOut } from "lucide-react";
+import { Bell, Crown, FileText, Moon, ShieldCheck, Stethoscope, Target, UserRound, LogOut } from "lucide-react";
 import { AppHeader } from "@/components/app/app-header";
 import { Avatar, AvatarFallback, initials } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -54,6 +54,7 @@ export default async function ProfileHubPage() {
         </ProfileRowGroup>
 
         <ProfileRowGroup label="Preferencias">
+          <ProfileLinkRow href="/app/notificaciones" icon={Bell} label="Notificaciones" description="Avisos y recordatorios" />
           <div className="flex min-h-14 items-center gap-3 px-4 py-2">
             <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-accent text-primary-strong">
               <Moon className="size-5" aria-hidden="true" />

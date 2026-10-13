@@ -35,14 +35,3 @@ export async function getFoodsByIds(supabase: Client, ids: string[]): Promise<Ma
   }
   return out;
 }
-
-export async function getFoodByBarcode(supabase: Client, barcode: string): Promise<FoodSummary | null> {
-  const code = barcode.replace(/\D/g, "");
-  if (code.length < 8 || code.length > 14) return null;
-  const { data: auth } = await supabase.auth.getUser();
-  const { data } = await supabase.from("foods").select("*, brands(name)").eq("barcode", code).order("is_public", { ascending: false }).limit(1);
-  const row = data?.[0];
-  if (!row) return null;
-  const { brands, ...food } = row as typeof row & { brands: { name: string } | null };
-  return toFoodSummary(food, auth.user?.id ?? null, brands?.name ?? null);
-}

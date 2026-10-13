@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { SetupRequired } from "@/components/setup-required";
-import { requireRole } from "@/lib/auth/session";
+import { getRoles, hasRole, requireRole } from "@/lib/auth/session";
 import { getAppSettings } from "@/lib/config/app-settings";
 import { isSupabaseConfigured } from "@/lib/env";
 
@@ -12,5 +12,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const { appName } = await getAppSettings();
   if (!isSupabaseConfigured()) return <SetupRequired appName={appName} />;
   await requireRole("editor");
-  return <AdminShell appName={appName}>{children}</AdminShell>;
+  const isAdmin = hasRole(await getRoles(), "admin");
+  return (
+    <AdminShell appName={appName} isAdmin={isAdmin}>
+      {children}
+    </AdminShell>
+  );
 }

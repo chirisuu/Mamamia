@@ -3,7 +3,7 @@ import type { z } from "zod";
 import type { Tables, TablesInsert } from "@/lib/db/database.types";
 import { normalizeText } from "@/lib/foods/dedup";
 import type { FoodData, foodVerificationSchema, mergeFoodsSchema, referencePriceSchema, usdaImportSchema } from "../schemas";
-import { AdminOpError, dbError, logAdminAction, rpcUntyped, type Db } from "./db";
+import { AdminOpError, dbError, logAdminAction, type Db } from "./db";
 
 export const FOODS_PER_PAGE = 30;
 
@@ -238,9 +238,11 @@ export type MergeResult = {
 };
 
 export async function mergeFoods(supabase: Db, data: z.output<typeof mergeFoodsSchema>): Promise<MergeResult> {
-  const { data: result, error } = await rpcUntyped<MergeResult>(supabase, "admin_merge_foods", { keep_id: data.keepId, drop_id: data.dropId });
+  const { data: raw, error } = await supabase.rpc("admin_merge_foods", { keep_id: data.keepId, drop_id: data.dropId });
   if (error) throw dbError(error, "No se pudieron fusionar los alimentos.");
-  if (!result) throw new AdminOpError("DB_ERROR", "La fusión no devolvió resultado.");
+  if (!raw) throw new AdminOpError("DB_ERROR", "La fusión no devolvió resultado.");
+  // jsonb armado por la función SQL con estas claves exactas.
+  const result = raw as unknown as MergeResult;
   await logAdminAction(supabase, {
     action: "food.merge",
     targetTable: "foods",

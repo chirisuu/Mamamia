@@ -38,6 +38,8 @@ vi.mock("next/headers", () => ({
   }),
 }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn() }));
+// after() solo existe dentro de una petición de Next; aquí las acciones se llaman directo.
+vi.mock("next/server", async (importOriginal) => ({ ...(await importOriginal<typeof import("next/server")>()), after: vi.fn() }));
 
 const envFile = fileURLToPath(new URL("../../.env.local", import.meta.url));
 for (const line of fs.readFileSync(envFile, "utf8").split(/\r?\n/)) {

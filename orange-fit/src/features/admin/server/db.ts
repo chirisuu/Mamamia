@@ -15,18 +15,6 @@ export class AdminOpError extends Error {
   }
 }
 
-/**
- * RPC de funciones que aún no están en `database.types.ts` (migración 20261013100801, los tipos
- * no se regeneran durante el trabajo en paralelo). Se llama como método para conservar `this`.
- */
-export async function rpcUntyped<T>(supabase: Db, fn: string, args?: Record<string, unknown>): Promise<{ data: T | null; error: PostgrestError | null }> {
-  const client = supabase as unknown as {
-    rpc: (fn: string, args?: Record<string, unknown>) => PromiseLike<{ data: unknown; error: PostgrestError | null }>;
-  };
-  const { data, error } = await client.rpc(fn, args);
-  return { data: (data as T | null) ?? null, error };
-}
-
 /** Traduce errores de Postgres/PostgREST a mensajes para el staff (sin filtrar detalles internos). */
 export function dbError(error: PostgrestError | { code?: string; message?: string } | null, fallback: string): AdminOpError {
   const code = error?.code ?? "";
