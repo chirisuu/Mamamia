@@ -5,6 +5,7 @@ import {
   aggregateHabitDays,
   evaluateBadges,
   evaluateChallenge,
+  parseBadgeCriteria,
   type ChallengeKind,
   type ChallengeProgress,
   type DailyHabitRecord,
@@ -40,6 +41,8 @@ export type BadgeView = {
   name: string;
   description: string | null;
   icon: string;
+  /** Tipo de criterio (`badges.criteria.type`), p. ej. "weight_logs_total". */
+  criteriaType: string | null;
   earned: boolean;
   earnedAt: string | null;
   current: number;
@@ -284,6 +287,8 @@ export async function syncAchievements(supabase: Client, userId: string, today: 
 
   const resultsByCode = new Map(evaluation.results.map((r) => [r.code, r]));
   const badgeViews: BadgeView[] = badges
+    // Criterios que la app no sabe medir no se muestran (ni como pendientes), salvo si ya se ganó.
+    .filter((b) => resultsByCode.get(b.code)?.supported || earnedAt.has(b.id))
     .map((b) => {
       const r = resultsByCode.get(b.code);
       return {
@@ -292,17 +297,14 @@ export async function syncAchievements(supabase: Client, userId: string, today: 
         name: b.name,
         description: b.description,
         icon: b.icon,
+        criteriaType: parseBadgeCriteria(b.criteria)?.type ?? null,
         earned: earnedAt.has(b.id),
         earnedAt: earnedAt.get(b.id) ?? null,
         current: r?.current ?? 0,
         target: r?.target ?? 0,
         progress: earnedAt.has(b.id) ? 1 : (r?.progress ?? 0),
-        supported: r?.supported ?? false,
       };
-    })
-    // Criterios que la app no sabe medir no se muestran (ni como pendientes).
-    .filter((b) => b.supported || b.earned)
-    .map(({ supported: _supported, ...rest }) => rest);
+    });
 
   const challengeViews: ChallengeView[] = challenges.map((c) => {
     const done = userChallenges.filter((u) => u.challenge_id === c.id && u.status === "completed");
