@@ -7,9 +7,19 @@ import { recordSignupConsents } from "@/features/auth/server/signup-consents";
 
 const OTP_TYPES = new Set<string>(["signup", "invite", "magiclink", "recovery", "email_change", "email"]);
 
+/** Las plantillas mandan el destino dentro de redirect_to (`…/auth/confirm?next=…`); safeNext lo sanea. */
+function nextFromRedirectTo(value: string | null): string | null {
+  if (!value) return null;
+  try {
+    return new URL(value).searchParams.get("next");
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Enlaces de los correos de Supabase (confirmación de cuenta, recuperación de contraseña).
- * - Plantilla recomendada: `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=…&next=…`
+ * - Plantillas de `supabase/templates`: `{{ .SiteURL }}/auth/confirm?token_hash=…&type=…&redirect_to=…`
  *   → verifyOtp (funciona aunque el correo se abra en otro navegador).
  * - Plantilla por defecto de Supabase (PKCE): llega `?code=…` → exchangeCodeForSession.
  */
@@ -18,7 +28,7 @@ export async function GET(request: NextRequest) {
   const tokenHash = params.get("token_hash");
   const type = params.get("type");
   const code = params.get("code");
-  const rawNext = params.get("next");
+  const rawNext = params.get("next") ?? nextFromRedirectTo(params.get("redirect_to"));
   const isRecovery = type === "recovery" || rawNext === "/nueva-clave";
   const next = safeNext(rawNext, isRecovery ? "/nueva-clave" : "/app");
   const failure = isRecovery ? "/recuperar?error=enlace" : "/verificar?error=enlace";

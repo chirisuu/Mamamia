@@ -123,20 +123,21 @@ Las llamadas a Supabase Auth salen **del navegador** a propósito: así el lími
   `secret = "env(GOOGLE_CLIENT_SECRET)"`); 3) agrega `{siteUrl}/auth/callback` a las URL de redirección
   permitidas (en local ya está en `additional_redirect_urls`); 4) define la variable y reconstruye.
 
-## Recomendado (configuración compartida, no editada por este módulo)
-- Plantillas de correo con `token_hash` para que el enlace funcione aunque se abra en otro navegador:
-  confirmación `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=signup` y recuperación
-  `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=recovery` (la app siempre manda `redirect_to` con
-  `?next=`). Con la plantilla por defecto (PKCE) funciona en el mismo navegador; si se abre en otro, la
-  cuenta queda confirmada igual y basta con ingresar.
-- `minimum_password_length = 8` en `supabase/config.toml` (la app ya exige 8; GoTrue local acepta 6).
+## Configuración compartida aplicada en la integración
+- Plantillas de correo en `supabase/templates/` con `token_hash`, para que el enlace funcione aunque se
+  abra en otro navegador: `{{ .SiteURL }}/auth/confirm?token_hash=…&type=email&redirect_to={{ .RedirectTo }}`
+  (confirmación) y `…&type=recovery` (recuperación). `/auth/confirm` toma `next` de `redirect_to`. Se usa
+  `SiteURL` y no `RedirectTo` como base porque, si la URL de retorno no está permitida, GoTrue la cambia
+  por la URL del sitio (sin `?`) y el enlace quedaría roto. En producción hay que copiarlas al panel.
+- `minimum_password_length = 8` en `supabase/config.toml` (la app ya exigía 8).
 
 ## Qué falta / límites conocidos
 - No hay cambio de correo ni MFA.
 - La búsqueda de profesionales recorre las cuentas con rol `professional` (directo hasta 50; luego
   `listUsers` paginado): suficiente para cientos, no para decenas de miles.
-- No se notifica a la persona cuando su profesional fija una meta (lo haría `createNotification`, pero el
-  profesional no puede escribir notificaciones ajenas con RLS; requiere una función o el cliente admin).
+- Cuando su profesional fija o cambia una meta, la persona recibe un aviso en la app: lo crea el trigger
+  `nutrition_targets_professional_notice` (migración `20261013110001`), porque con RLS el profesional no
+  puede escribir notificaciones ajenas.
 - El export no incluye `error_reports` (solo los lee el staff); se borran en cascada con la cuenta.
 - Retirar el consentimiento de IA queda registrado, pero el módulo de IA debe consultarlo antes de
   procesar (`consents` vigente de `ai_processing`).

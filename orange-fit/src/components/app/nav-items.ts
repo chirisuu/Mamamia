@@ -1,5 +1,6 @@
 import {
   Activity,
+  Apple,
   CalendarDays,
   Camera,
   ChartLine,
@@ -41,6 +42,7 @@ export const APP_PRIMARY_NAV: readonly NavItem[] = [
 /** Solo en la barra lateral de escritorio; en móvil se llega desde Inicio/Plan/Perfil. */
 export const APP_SECONDARY_NAV: readonly NavItem[] = [
   { href: "/app/recetas", label: "Recetas", icon: ChefHat },
+  { href: "/app/alimentos", label: "Mis alimentos", icon: Apple },
   { href: "/app/compras", label: "Compras", icon: ShoppingBasket },
   { href: "/app/asistente", label: "Asistente", icon: Sparkles },
   { href: "/app/logros", label: "Logros", icon: Trophy },
