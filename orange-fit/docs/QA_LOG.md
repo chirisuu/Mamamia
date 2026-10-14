@@ -22,7 +22,7 @@ Fallos encontrados al juntar los módulos y recorrer la app compilada a 390 px:
 
 Resultado de la Fase A: lint 0 · typecheck 0 · 1065 unitarias · 200 de integración · build sin advertencias ·
 E2E 14/14 (registro con correo real, diario, seguridad, integraciones sin credenciales y recorrido de las
-98 rutas por rol a 390 px).
+89 rutas a 390 px: 85 pantallas por rol + 4 archivos de SEO/PWA).
 
 Pendientes para el bucle (lente UX): en `/app/progreso`, las etiquetas «Ritmo semanal» y «Peso de tendencia» se
 cortan con «…» a 390 px.

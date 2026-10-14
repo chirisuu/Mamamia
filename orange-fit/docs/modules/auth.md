@@ -139,8 +139,8 @@ Las llamadas a Supabase Auth salen **del navegador** a propósito: así el lími
   `nutrition_targets_professional_notice` (migración `20261013110001`), porque con RLS el profesional no
   puede escribir notificaciones ajenas.
 - El export no incluye `error_reports` (solo los lee el staff); se borran en cascada con la cuenta.
-- Retirar el consentimiento de IA queda registrado, pero el módulo de IA debe consultarlo antes de
-  procesar (`consents` vigente de `ai_processing`).
+- Retirar el consentimiento de IA queda registrado y la API de IA lo respeta: responde 403 `CONSENT_REQUIRED`
+  (`src/features/ai/server/http.ts`).
 
 ## Pruebas
 - Unitarias: `src/features/auth/auth.test.ts`, `src/features/onboarding/onboarding.test.ts`,

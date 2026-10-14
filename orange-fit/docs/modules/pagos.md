@@ -80,9 +80,8 @@ Todas responden JSON; las de la persona comprueban origen (403) y sesión (401) 
 
 ## Qué falta / límites conocidos
 - No se pudo probar contra Stripe ni Mercado Pago reales (sin claves y sin red hacia sus APIs): Stripe se probó con eventos
-  firmados con `generateTestHeaderString`; Mercado Pago con firma HMAC real y `fetch` simulado. Tampoco se ejecutó
-  `next build`/`next dev` (prohibido en el trabajo en paralelo): las páginas se probaron renderizándolas en el servidor
-  con datos reales de Supabase local.
+  firmados con `generateTestHeaderString`; Mercado Pago con firma HMAC real y `fetch` simulado. `next build` y el recorrido
+  de humo E2E se corrieron después, en la integración.
 - `plan_prices.mercadopago_plan_id` no se usa: la suscripción de Mercado Pago es "sin plan asociado" (monto e intervalo
   van en cada `/preapproval`), así el precio vive solo en `plan_prices`.
 - Mercado Pago: el `free_trial` en una preaprobación sin plan depende de la cuenta; si Mercado Pago lo ignora, el primer

@@ -83,8 +83,8 @@ respuesta en `src/lib/foods/api-types.ts` (importables desde cliente).
   probó con respuestas grabadas con la forma real de FDC.
 
 ## Qué falta / decisiones a revisar
-- El panel admin (dueño: admin) debe llamar a `importUsdaFoods` y `findDuplicateCandidates`; este módulo
-  no tiene UI de administración.
+- La UI está en el panel admin: `/admin/alimentos/importar` llama a `importUsdaFoods` y `/admin/alimentos/duplicados`
+  a `findDuplicateCandidates`.
 - La búsqueda por código no usa `getFoodByBarcode` de `search.ts`: hace una sola consulta con todas las
   variantes del código (UPC-A/EAN-13/UPC-E) y descarta rechazados. `getFoodByBarcode` sigue igual para
   quien lo use.

@@ -131,10 +131,10 @@ noreferrer nofollow"`. Tope de 60 000 caracteres y de anidación.
 ## Falta / límites conocidos
 - **Capturas**: falta la de «foto con IA» (necesita una clave de Anthropic y una foto real); la portada
   muestra «Captura en preparación» en su lugar.
-- `/precios` (pagos) vive fuera de `(marketing)`: no hereda el encabezado ni el pie del sitio público
-  (el service worker y los iconos sí, porque están en el layout raíz).
+- `/precios` (pagos) vive fuera de `(marketing)`: pinta su propio encabezado y pie, pero no tiene el aviso de
+  mantenimiento ni el enlace «Saltar al contenido» del sitio público.
 - No hay modo sin conexión para registrar comidas (decisión: nada simulado).
-- No se pudo comprobar con `next dev`/`next build` (prohibido en este paso). La revisión visual se hizo
+- En este paso no se corrió `next build` (sí después, en la integración, junto con el recorrido de humo E2E). La revisión visual se hizo
   renderizando las páginas a HTML con datos reales de la BD local + Tailwind compilado y Chromium a 390 px
   y 1280 px (sin desbordes horizontales, claro y oscuro).
 

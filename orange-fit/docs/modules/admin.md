@@ -114,15 +114,13 @@ se tipa localmente (`AdminRecipeRow`).
 - Primer superadmin: por SQL (`insert into public.user_roles (user_id, role) values ('<uuid>', 'superadmin');`).
 
 ## Qué falta / límites conocidos
-- `AdminShell` (compartido) muestra todas las secciones a un editor; las de admin le responden 404. Pedido
-  abajo ("cambios en archivos compartidos").
+- `AdminShell` oculta al editor las secciones exclusivas de admin (y si entra por URL, responden 404).
 - La vista previa de contenidos usa el renderer del panel (`features/admin/lib/markdown.tsx`); el sitio público
   usa el de `features/marketing/markdown.tsx`. Ambos son seguros, pero podrían diferir en detalles de estilo.
 - No se borra un alimento del catálogo desde el panel (se rechaza o se fusiona): el diario y las recetas lo
   referencian. Tampoco hay creación/borrado de planes (`free`/`premium` vienen de la semilla).
 - Búsqueda de usuarios: solo por correo (como pide el contrato); sin filtros por plan o rol.
-- No se ejecutó `next dev`/`next build` (prohibido en paralelo): las páginas se probaron renderizándolas en el
-  servidor con datos reales del Supabase local.
+- Verificado después en la integración: `next build` pasa y el recorrido de humo E2E cubre todas las pantallas del panel.
 
 ## Pruebas
 - Unitarias (`npx vitest run src/features/admin`, 52): esquemas Zod (configuración, alimento, planes y precios,

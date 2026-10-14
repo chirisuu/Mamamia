@@ -102,7 +102,7 @@ ingredientes en el formulario de recetas y en "Añadir alimento" del plan.
   comida según la hora (se puede cambiar).
 - Imágenes de recetas: el staff debe subir `official/{slug}.webp` y fijar `image_path`.
 - Publicar recetas de usuarios (admin): exige que todos sus ingredientes sean públicos (trigger 23514).
-- Sin E2E propios; no se ejecutó `next dev`/`next build` (regla del trabajo en paralelo).
+- Sin E2E propios; `next build` y el recorrido de humo E2E (que cubre sus pantallas) se corrieron en la integración.
 
 ## Pruebas
 - Unitarias (85): `recipes/lib/*.test.ts` (adaptadores filas → tarjeta y → entrada del planificador,
