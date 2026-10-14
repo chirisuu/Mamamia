@@ -17,9 +17,7 @@ Fallos encontrados al juntar los módulos y recorrer la app compilada a 390 px:
 | Media | Correos de confirmación y de recuperación con PKCE: abiertos en otro navegador fallaban | plantillas con `token_hash` | `tests/integration/auth-signup.test.ts` canjea desde otro cliente |
 | Alta | `/admin/ia` fallaba siempre en producción: la página de servidor pasaba `format={(n) => …}` a un gráfico `"use client"` (una función no se puede serializar) | prop `valueFormat="usd"` con los formateadores dentro del componente | segunda regla de `tests/unit/server-client-boundary.test.ts`, recorrido de humo |
 | Media | Inicio mostraba «673 kcal restantes» en el anillo y «672» en el desglose (y el diario 673) con un consumo decimal: cada número se redondeaba por separado | se redondea lo consumido una vez, antes de restar | `dashboard-cards.test.tsx` (1750 − 1077.5) |
-
 | Media | En `/app/perfil/privacidad` (consentimientos) y en la lista de accesos profesionales, las fechas se formateaban sin zona horaria: de 19:00 a 24:00 en Lima el servidor (UTC) mostraba el día siguiente, el navegador otro, y React fallaba al hidratar | `formatInstantDate(iso, zona)` con America/Lima por defecto | `src/lib/format.test.ts`, regla `tests/unit/date-format-guard.test.ts` (ningún `toLocaleDateString` sin `timeZone`), recorrido de humo a las 22:50 de Lima |
-
 | Baja | `/admin` desbordaba 73 px a 390 px: grids sin columnas explícitas (página y lista de integraciones) crecían hasta el ancho de filas con texto `truncate` | `grid-cols-1` en esos contenedores | recorrido de humo |
 
 Resultado de la Fase A: lint 0 · typecheck 0 · 1065 unitarias · 200 de integración · build sin advertencias ·
