@@ -37,6 +37,8 @@ src/features/<modulo>/    lógica y UI de cada módulo:
     actions.ts            server actions ("use server"), validadas con Zod
     queries.ts            lecturas de servidor (import "server-only")
     schemas.ts            esquemas Zod compartidos cliente/servidor
+    server/               lógica de servidor reutilizable (import "server-only"), usada por actions y rutas
+    lib/                  funciones puras del módulo (sin I/O), con sus pruebas al lado
 src/components/ui/        primitivas del sistema de diseño (no lógica de negocio)
 src/components/app/       piezas compartidas del área de usuario (nav, FAB, encabezados)
 src/lib/nutrition/        motor nutricional PURO (sin I/O), 100 % probado
@@ -44,7 +46,7 @@ src/lib/ai/  src/lib/billing/  src/lib/foods/   servicios con adaptadores
 src/lib/supabase/         clientes (browser, server, admin, proxy)
 src/lib/auth/             sesión, roles, guardas
 src/lib/db/database.types.ts   tipos generados (`npm run db:types`), no editar a mano
-supabase/migrations/      SQL versionado; supabase/seed.sql datos base
+supabase/migrations/      SQL versionado; supabase/seed/*.sql datos base (en orden alfabético)
 tests/unit  tests/integration  tests/e2e
 ```
 Las páginas en `src/app` son delgadas: leen datos con `queries.ts` y renderizan componentes de
@@ -72,7 +74,7 @@ Roles en `user_roles`: `superadmin ⊃ admin ⊃ editor`; `professional` aparte.
 tiene fila. En SQL: `public.has_role('admin')`.
 
 ## Plan gratis / premium
-`src/lib/billing/entitlements.ts`: `getEntitlements(userId)` → `{ plan, isPremium, features, aiLimits }`.
+`src/lib/billing/entitlements.ts`: `getEntitlements()` (usa la sesión actual, cacheada por petición) → `{ plan, isPremium, features, aiLimits, subscription }`.
 En UI, `<PremiumGate feature="meal_plans">` muestra el contenido o la invitación a Premium.
 Claves de feature: `ai_photo`, `ai_voice`, `ai_text`, `assistant`, `meal_plans`, `smart_recipes`,
 `shopping_list`, `advanced_analytics`, `exports`.

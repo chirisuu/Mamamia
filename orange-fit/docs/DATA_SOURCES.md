@@ -1,11 +1,11 @@
 # Procedencia de los datos — alimentos, recetas y precios
 
 Este documento explica de dónde salen los valores nutricionales, las recetas oficiales y los precios
-referenciales que se cargan con `supabase/seed-pending/`, por qué **todos** entran como no verificados y
+referenciales que se cargan desde `supabase/seed/`, por qué **todos** entran como no verificados y
 cómo se revisan en el panel. Va de la mano con la regla 2 de `docs/CONVENTIONS.md` (nutrientes con
 procedencia; las estimaciones se marcan como estimaciones).
 
-## 1. Qué hay en `supabase/seed-pending/`
+## 1. Qué hay en `supabase/seed/`
 
 | Archivo | Contenido |
 |---|---|
@@ -18,9 +18,10 @@ Todos los alimentos: `source = 'curated'`, `verification_status = 'unverified'`,
 
 **Cómo cargarlos** (después de las migraciones; orden 10 → 20 → 30):
 
-- Con `psql`: `psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/seed-pending/10_foods.sql` y luego 20 y 30.
-- O moviéndolos a `supabase/seed/` (la config carga `./seed/*.sql` en orden alfabético, después de
-  `00_base.sql`) para que entren con `supabase db reset`.
+- En local entran solos con `supabase db reset` (la config carga `./seed/*.sql` en orden alfabético,
+  después de `00_base.sql`).
+- En un proyecto en la nube (`supabase db push` no carga semillas): `psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/seed/10_foods.sql`
+  y luego 20 y 30 (ver `docs/DEPLOYMENT.md`).
 
 Cada archivo va en una transacción y empieza con una guarda: si ya se cargó, aborta con un mensaje y no
 escribe nada (no son idempotentes a propósito, para no duplicar filas).

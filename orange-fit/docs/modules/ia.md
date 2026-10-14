@@ -150,9 +150,9 @@ consentimiento (`CONSENT_VERSION`) desde las pantallas de IA; se retira en Priva
 - No hay lista de «mis fotos de comidas» para ver o borrar las fotos guardadas (quedan en
   `meal-photos/{uid}/…`, se borran con la cuenta y vía exportación aparecen como URL firmadas).
 - El costo de la transcripción no se estima (`estimated_cost_usd` null): el precio es por minuto.
-- `OPENAI_TRANSCRIPTION_MODEL` se lee de `process.env` (no está en `serverEnv()`).
 - La moderación por reglas es simple (lista de expresiones); no reemplaza una revisión clínica.
-- Sin E2E propios; no se ejecutó `next dev`/`next build` (regla del trabajo en paralelo).
+- E2E: `tests/e2e/integraciones.spec.ts` comprueba el 503 `AI_NOT_CONFIGURED` sin clave; el flujo con IA
+  real (foto → confirmación → registro) no se probó contra Anthropic.
 
 ## Pruebas
 - Unitarias (`npx vitest run src/lib/ai src/features/ai src/features/assistant`, 104 pruebas):

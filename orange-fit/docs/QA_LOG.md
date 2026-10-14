@@ -27,6 +27,22 @@ E2E 14/14 (registro con correo real, diario, seguridad, integraciones sin creden
 Pendientes para el bucle (lente UX): en `/app/progreso`, las etiquetas «Ritmo semanal» y «Peso de tendencia» se
 cortan con «…» a 390 px.
 
+## Revisión de la documentación (2026-10-14)
+
+Al escribir `ARCHITECTURE.md`, `SECURITY.md` y `DEPLOYMENT.md` se contrastó cada afirmación con el código.
+Salieron estos fallos:
+
+| Severidad | Fallo | Corrección | Prueba que lo cubre |
+|---|---|---|---|
+| Alta | Al retirar el permiso de datos de salud, los profesionales con acceso vigente seguían leyendo y escribiendo los registros (Ley 29733: dato sensible) | `has_professional_access` exige `has_health_consent` (última decisión = otorgado); al volver a autorizar se reanuda | `professional-access.test.ts` (retira, no ve ni escribe; vuelve a dar, ve) |
+| Media | El cron de recordatorios seguía avisando a quien retiró el permiso de salud (acceso en pausa) | el cron solo elige perfiles con `onboarding_completed_at` | `seguimiento.test.ts` (perfil en pausa con avisos y ayuno activo: ninguna notificación) |
+| Media | Un superadmin podía crear, cambiar o quitar superadmins por la API (solo lo frenaba el Zod del panel) | las políticas de `user_roles` excluyen `superadmin`; solo por SQL | `profiles-roles-billing.test.ts` |
+| Baja | La prueba del cron solo pasaba el 2026-10-13: fecha fija contra el reloj real de la base | usa la fecha real de Lima | `seguimiento.test.ts` |
+| Baja | La prueba de páginas del admin fallaba a veces: tomaba «la primera» receta del usuario de una consulta sin orden | elige la rechazada (la que tiene nota) | `admin.test.ts` (3 corridas seguidas) |
+| Baja | Docs desactualizados: variables de Google con otro nombre, carpeta `seed-pending` que no existe, `getEntitlements(userId)`, «Ajustes» en textos legales y FAQ (es Perfil → Privacidad/Suscripción), script `db:local` roto, SW e iconos «solo en el sitio público», capturas «inexistentes» | textos y script corregidos | — |
+
 ## Rondas del bucle (Fase C)
 
-_Todavía no empieza._
+No se ejecutó: se detuvo a pedido para no gastar más tokens. El plan y el prompt maestro quedan en
+`docs/QA_PLAN.md` para correrlo después. Sigue abierto lo de arriba (etiquetas cortadas en `/app/progreso`) y los
+riesgos de `docs/SECURITY.md` §13.

@@ -1,6 +1,6 @@
 -- ORANGE FIT · Seed base (se aplica con `supabase db reset` después de las migraciones).
 -- Contiene solo datos de configuración y contenido propio. Alimentos, recetas y precios
--- referenciales viven en supabase/seed-pending/ (otro flujo): NO se cargan aquí.
+-- referenciales van en 10_foods.sql, 20_recipes.sql y 30_reference_prices.sql (misma carpeta).
 -- Es idempotente: se puede volver a ejecutar sin duplicar filas.
 
 -- ---------------------------------------------------------------------------
@@ -223,7 +223,7 @@ El precio vigente, la moneda y si hay días de prueba se muestran en la página 
     'faq', 'published', 60),
 
   ('faq-cancelar-suscripcion', '¿Cómo cancelo mi suscripción?',
-$md$Puedes cancelarla cuando quieras desde Ajustes, en la sección de suscripción. Mantienes Premium hasta el final del periodo que ya pagaste y después tu cuenta vuelve al plan gratis sin perder tus registros.$md$,
+$md$Puedes cancelarla cuando quieras desde Perfil → Suscripción. Mantienes Premium hasta el final del periodo que ya pagaste y después tu cuenta vuelve al plan gratis sin perder tus registros.$md$,
     'faq', 'published', 70),
 
   ('faq-quien-ve-mis-datos', '¿Quién puede ver mis datos?',
@@ -233,7 +233,7 @@ No vendemos tus datos. Tus fotos de progreso se guardan en un espacio privado al
     'faq', 'published', 80),
 
   ('faq-borrar-mis-datos', '¿Puedo descargar o borrar mis datos?',
-$md$Sí. Puedes eliminar tu cuenta desde Ajustes, lo que borra tus registros. También puedes ejercer tus derechos de acceso, rectificación, cancelación y oposición escribiendo a nuestro correo de soporte.$md$,
+$md$Sí. Puedes eliminar tu cuenta desde Perfil → Privacidad, lo que borra tus registros. También puedes ejercer tus derechos de acceso, rectificación, cancelación y oposición escribiendo a nuestro correo de soporte.$md$,
     'faq', 'published', 90),
 
   ('faq-condiciones-de-salud', '¿Puedo usar la app si tengo una condición de salud?',
@@ -260,7 +260,7 @@ ORANGE FIT es una herramienta de registro de alimentación, hidratación, peso y
 ## 3. Cuenta
 - Debes tener al menos [EDAD MÍNIMA] años para crear una cuenta.
 - Eres responsable de mantener la confidencialidad de tu contraseña.
-- Puedes eliminar tu cuenta en cualquier momento desde Ajustes.
+- Puedes eliminar tu cuenta en cualquier momento desde Perfil → Privacidad.
 
 ## 4. Plan gratis y Premium
 - El plan gratis no tiene costo. Premium es una suscripción de pago con renovación automática según el periodo elegido.
@@ -327,7 +327,7 @@ Peso, medidas corporales, porcentaje de grasa (si lo registras), lo que comes, c
 Solo para calcular tus metas, mostrarte tu progreso y activar avisos o límites de seguridad en las recomendaciones automáticas.
 
 ## Tu consentimiento
-Te pedimos un consentimiento específico, separado de los términos, antes de guardar datos de salud. Puedes revocarlo en cualquier momento desde Ajustes; algunas funciones dejarán de estar disponibles.
+Te pedimos un consentimiento específico, separado de los términos, antes de guardar datos de salud. Puedes revocarlo en cualquier momento desde Perfil → Privacidad; algunas funciones dejarán de estar disponibles.
 
 ## Quién accede
 Solo tú. Un profesional de salud accede únicamente si tú le das acceso, y puedes revocarlo cuando quieras.

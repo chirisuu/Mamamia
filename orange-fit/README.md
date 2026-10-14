@@ -20,7 +20,7 @@ su clave: nunca simula un resultado. Detalle en [`FEATURES.md`](FEATURES.md).
 
 ## Correrlo en tu computadora
 
-Requisitos: Node 22+, Docker Desktop (abierto) y Git.
+Requisitos: Node 20.9 o superior (recomendado 22), Docker Desktop (abierto) y Git.
 
 ```bash
 git clone https://github.com/chirisuu/Mamamia.git

@@ -12,7 +12,7 @@ begin;
 do $$
 begin
   if exists (select 1 from public.reference_prices where source = 'Referencial inicial sin fuente verificada — actualizar en /admin') then
-    raise exception 'seed-pending/30_reference_prices.sql ya fue cargado. No se escribió nada.';
+    raise exception 'supabase/seed/30_reference_prices.sql ya fue cargado. No se escribió nada.';
   end if;
 end;
 $$;

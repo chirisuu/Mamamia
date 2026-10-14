@@ -57,6 +57,8 @@ async function loadCandidates(admin: Client, now: Date): Promise<{ candidates: C
         .from("profiles")
         .select("id, timezone, notification_prefs")
         .neq("notification_prefs", "{}")
+        // Acceso en pausa (retiró el permiso de datos de salud) u onboarding sin terminar: nada de avisos.
+        .not("onboarding_completed_at", "is", null)
         .order("id")
         .range(from, from + PAGE - 1),
       "las preferencias",
@@ -92,7 +94,11 @@ async function loadCandidates(admin: Client, now: Date): Promise<{ candidates: C
   const missing = [...fasts.keys()].filter((id) => !byId.has(id));
   for (let i = 0; i < missing.length; i += CHUNK) {
     const rows = must(
-      await admin.from("profiles").select("id, timezone, notification_prefs").in("id", missing.slice(i, i + CHUNK)),
+      await admin
+        .from("profiles")
+        .select("id, timezone, notification_prefs")
+        .in("id", missing.slice(i, i + CHUNK))
+        .not("onboarding_completed_at", "is", null),
       "los perfiles",
     );
     for (const p of rows) {

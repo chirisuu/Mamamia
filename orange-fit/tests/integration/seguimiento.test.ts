@@ -43,7 +43,7 @@ describe("seguimiento: peso, fotos, ayuno y cron", () => {
     for (const u of [a, b]) {
       const { error } = await admin
         .from("profiles")
-        .update({ birth_date: "1990-05-01", sex: "female", height_cm: 165, timezone: "America/Lima" })
+        .update({ birth_date: "1990-05-01", sex: "female", height_cm: 165, timezone: "America/Lima", onboarding_completed_at: new Date().toISOString() })
         .eq("id", u.id);
       if (error) throw new Error(error.message);
       const goal = await admin.from("user_goals").insert({ user_id: u.id, goal_type: "maintain", current_weight_kg: 70, health_flags: [] });
@@ -204,7 +204,10 @@ describe("seguimiento: peso, fotos, ayuno y cron", () => {
 
     it("con el secreto corre y crea el recordatorio debido una sola vez", async () => {
       await admin.from("profiles").update({ notification_prefs: { logging: { enabled: true, hour: 10 } } }).eq("id", b.id);
-      const fixed = new Date(`${today}T20:00:00Z`); // 15:00 en Lima, sin comidas registradas
+      // Fecha real de Lima: la deduplicación compara el día local del created_at (reloj de la base) con
+      // el día del recordatorio; con una fecha fija la prueba solo pasaba ese día.
+      const limaToday = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Lima" }).format(new Date());
+      const fixed = new Date(`${limaToday}T20:00:00Z`); // 15:00 en Lima, sin comidas registradas
       const run1 = await createDueReminders(admin, fixed);
       expect(run1.created).toBeGreaterThanOrEqual(1);
       const run2 = await createDueReminders(admin, new Date(fixed.getTime() + 60 * 60_000));
@@ -217,6 +220,22 @@ describe("seguimiento: peso, fotos, ayuno y cron", () => {
       const body = (await ok.json()) as { ok: boolean; push: { configured: boolean } };
       expect(body.ok).toBe(true);
       expect(body.push.configured).toBe(false);
+    });
+
+    it("con el acceso en pausa (retiró el permiso de datos de salud) no crea recordatorios", async () => {
+      // revokeHealthConsent deja onboarding_completed_at en null; las preferencias y el ayuno siguen ahí.
+      const fixed = new Date(`${today}T20:00:00Z`);
+      const prefs = { logging: { enabled: true, hour: 10 }, fasting: { enabled: true } };
+      const paused = await admin.from("profiles").update({ notification_prefs: prefs, onboarding_completed_at: null }).eq("id", a.id);
+      expect(paused.error).toBeNull();
+      const fast = await admin
+        .from("fasting_sessions")
+        .insert({ user_id: a.id, protocol: "16:8", target_hours: 16, status: "active", started_at: new Date(fixed.getTime() - 20 * 3_600_000).toISOString() });
+      expect(fast.error).toBeNull();
+
+      await createDueReminders(admin, fixed);
+      const { data } = await admin.from("notifications").select("type").eq("user_id", a.id);
+      expect(data).toEqual([]);
     });
   });
 });

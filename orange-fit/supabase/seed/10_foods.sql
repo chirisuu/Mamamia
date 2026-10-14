@@ -16,7 +16,7 @@ begin;
 do $$
 begin
   if exists (select 1 from public.foods where created_by is null and name_normalized = 'arroz blanco cocido') then
-    raise exception 'seed-pending/10_foods.sql ya fue cargado (existe "arroz blanco cocido"). No se escribió nada.';
+    raise exception 'supabase/seed/10_foods.sql ya fue cargado (existe "arroz blanco cocido"). No se escribió nada.';
   end if;
 end;
 $$;

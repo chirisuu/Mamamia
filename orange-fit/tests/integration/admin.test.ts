@@ -563,8 +563,9 @@ describe("panel admin (acciones y páginas reales)", () => {
     const { QueryClient, QueryClientProvider } = await import("@tanstack/react-query");
     const withQuery = async (node: Promise<React.ReactElement>) =>
       renderToStaticMarkup(React.createElement(QueryClientProvider, { client: new QueryClient() }, await node));
-    const { data: mine } = await admin.from("recipes").select("id, owner_id").in("id", recipeIds);
-    const userRecipe = mine?.find((r) => r.owner_id === normal.id);
+    const { data: mine } = await admin.from("recipes").select("id, owner_id, review_note").in("id", recipeIds);
+    // La rechazada (con nota): hay más de una receta del usuario y la consulta no trae un orden fijo.
+    const userRecipe = mine?.find((r) => r.owner_id === normal.id && r.review_note);
     const official = mine?.find((r) => r.owner_id === null);
     const detail = await withQuery(AdminRecipePage({ params: Promise.resolve({ id: userRecipe!.id }) }));
     expect(detail).toContain("Receta de usuario");

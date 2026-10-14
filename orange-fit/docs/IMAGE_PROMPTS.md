@@ -2,7 +2,7 @@
 
 Las imágenes de las recetas oficiales y de la landing se generan con **ChatGPT** (en tu computadora) y se
 suben luego al panel. Este archivo tiene un prompt listo para copiar por cada receta de
-`supabase/seed-pending/20_recipes.sql` (36 recetas) y 4 ilustraciones para la landing.
+`supabase/seed/20_recipes.sql` (36 recetas) y 4 ilustraciones para la landing.
 
 > Las fotos generadas con IA son **ilustrativas**: muestran cómo se ve el plato, no la porción exacta
 > del usuario. Recomendación para la UI: rotularlas como "Imagen referencial".

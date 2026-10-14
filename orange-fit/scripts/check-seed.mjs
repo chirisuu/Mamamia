@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Valida los seeds de supabase/seed-pending sin base de datos.
-// Uso: node scripts/check-seed.mjs [carpeta]   (por defecto supabase/seed-pending)
+// Valida los seeds de supabase/seed sin base de datos.
+// Uso: node scripts/check-seed.mjs [carpeta]   (por defecto supabase/seed)
 //
 // Comprueba:
 //  1. Columnas usadas vs docs/DATA_MODEL.md (y vs supabase/migrations si existen) y valores de enums.
@@ -16,7 +16,7 @@ import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const dir = process.argv[2] ? resolve(process.cwd(), process.argv[2]) : join(root, 'supabase/seed-pending');
+const dir = process.argv[2] ? resolve(process.cwd(), process.argv[2]) : join(root, 'supabase/seed');
 const errors = [];
 const warnings = [];
 const err = (m) => errors.push(m);

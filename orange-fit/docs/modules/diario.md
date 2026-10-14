@@ -97,7 +97,7 @@ Nada propio. Depende de:
 - Días anteriores a la primera meta usan la primera meta para la racha de metas y la vista del diario.
 - Las plantillas guardan gramos (no la porción casera elegida): al aplicarlas se registran en gramos.
 - No hay paginación en «mis alimentos» ni en recientes (150 últimos ítems → 12 alimentos distintos).
-- Sin E2E (Playwright) propios todavía; no se ejecutó `next dev`/`next build` (regla del trabajo en paralelo).
+- E2E: `tests/e2e/diario.spec.ts` (buscar → porción → agregar → totales) y el recorrido de humo.
 
 ## Pruebas
 - Unitarias: `src/features/diary/lib/*.test.ts`, `src/features/dashboard/lib/*.test.ts` (presupuesto y

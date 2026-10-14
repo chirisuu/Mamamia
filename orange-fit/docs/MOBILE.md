@@ -12,7 +12,7 @@
 | Manifiesto | `src/app/manifest.ts` → `/manifest.webmanifest` | Nombre vigente (`app_settings.app_name`), `short_name`, `start_url /app`, `display standalone`, colores de marca, iconos `any` + `maskable`, atajos a «Registrar comida» (`/app/agregar/buscar`) y «Agua» (`/app/agua`), capturas si existen en `public/screenshots/`. |
 | Iconos | `public/icons/*`, `public/favicon.ico` | Generados con `node scripts/generate-icons.mjs` desde `public/icons/logo.svg` (192, 512, maskable 512, apple-touch 180, insignia monocroma 96, favicon 16/32/48). |
 | Service worker | `public/sw.js` | Precarga `offline.html` e iconos; navegaciones network-first con página sin conexión; `/_next/static` cache-first; **nunca** cachea `/api`, `/auth`, páginas ni respuestas privadas. Push `{ title, body, url }` y `notificationclick`. |
-| Registro del SW | `src/components/pwa/register-sw.tsx` | Solo en producción (o con `NEXT_PUBLIC_ENABLE_SW=true`). Hoy se monta en el sitio público; ver §6. |
+| Registro del SW | `src/components/pwa/register-sw.tsx` | Solo en producción (o con `NEXT_PUBLIC_ENABLE_SW=true`). Se monta en el layout raíz (`src/app/layout.tsx`), así que cubre el sitio público, `/app` y `/admin`. |
 | Botón «Instalar» | `src/components/pwa/install-button.tsx` | Usa `beforeinstallprompt`; en iOS muestra las instrucciones de Safari; no aparece si ya está instalada o el navegador no lo permite. |
 | Sin conexión | `public/offline.html` | Página autónoma (sin JS ni CSS externos). No hay registro sin conexión: lo dice. |
 
@@ -117,10 +117,8 @@ datos de salud requieren además el consentimiento `health_data` vigente (Ley N.
 3. Adaptador de salud según `docs/INTEGRATIONS.md`.
 4. Decidir la estrategia de compras dentro de la app antes de enviar a revisión.
 
-## 6. Pendiente para la integración web
+## 6. Integración web
 
-- Montar `<RegisterServiceWorker />` (de `src/components/pwa/register-sw.tsx`) en el layout raíz o en el
-  de `/app`, para que el SW quede registrado también para quien entra directo a la app (hoy se registra
-  al visitar el sitio público o al activar push en Notificaciones).
-- Declarar los iconos (`/favicon.ico`, `/icons/logo.svg`, `/icons/apple-touch-icon.png`) en los metadatos
-  del layout raíz; hoy solo los declara el layout del sitio público.
+- `<RegisterServiceWorker />` y los iconos (`/favicon.ico`, `/icons/logo.svg`, `/icons/apple-touch-icon.png`)
+  se declaran en el layout raíz: quien entra directo a `/app` tiene página sin conexión e icono de
+  pantalla de inicio sin pasar por la portada.

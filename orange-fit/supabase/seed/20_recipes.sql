@@ -15,7 +15,7 @@ begin;
 do $$
 begin
   if exists (select 1 from public.recipes where slug = 'avena-con-platano-y-chia') then
-    raise exception 'seed-pending/20_recipes.sql ya fue cargado (existe la receta "avena-con-platano-y-chia"). No se escribió nada.';
+    raise exception 'supabase/seed/20_recipes.sql ya fue cargado (existe la receta "avena-con-platano-y-chia"). No se escribió nada.';
   end if;
 end;
 $$;

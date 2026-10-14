@@ -119,8 +119,8 @@ Las llamadas a Supabase Auth salen **del navegador** a propósito: así el lími
 - **Google**: el botón aparece solo con `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true`. Para activarlo:
   1) en Google Cloud crea un cliente OAuth «Aplicación web» con URI de redirección
   `{SUPABASE_URL}/auth/v1/callback`; 2) en Supabase activa el proveedor Google con ese client id/secret
-  (local: `[auth.external.google] enabled = true`, `client_id = "env(GOOGLE_CLIENT_ID)"`,
-  `secret = "env(GOOGLE_CLIENT_SECRET)"`); 3) agrega `{siteUrl}/auth/callback` a las URL de redirección
+  (local: `[auth.external.google] enabled = true`, `client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"`,
+  `secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"`); 3) agrega `{siteUrl}/auth/callback` a las URL de redirección
   permitidas (en local ya está en `additional_redirect_urls`); 4) define la variable y reconstruye.
 
 ## Configuración compartida aplicada en la integración

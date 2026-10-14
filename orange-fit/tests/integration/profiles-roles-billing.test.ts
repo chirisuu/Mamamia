@@ -43,6 +43,28 @@ describe("perfiles, roles, cobros y ajustes", () => {
     expect(data).toEqual([]);
   });
 
+  it("un superadmin otorga y quita roles por la API, pero superadmin solo por SQL", async () => {
+    const boss = await createTestUser("perfil-super", ["superadmin"]);
+    const other = await createTestUser("perfil-super-2", ["superadmin"]);
+    try {
+      const editor = await boss.client.from("user_roles").insert({ user_id: a.id, role: "editor" });
+      expect(editor.error).toBeNull();
+      const removed = await boss.client.from("user_roles").delete().eq("user_id", a.id).eq("role", "editor").select("role");
+      expect(removed.data).toEqual([{ role: "editor" }]);
+
+      const promote = await boss.client.from("user_roles").insert({ user_id: a.id, role: "superadmin" });
+      expect(promote.error?.code).toBe("42501");
+      const demote = await boss.client.from("user_roles").delete().eq("user_id", other.id).select("role");
+      expect(demote.data).toEqual([]);
+      const swap = await boss.client.from("user_roles").update({ role: "editor" }).eq("user_id", other.id).select("role");
+      expect(swap.data).toEqual([]);
+      const { data } = await admin.from("user_roles").select("user_id, role").in("user_id", [a.id, other.id]);
+      expect(data).toEqual([{ user_id: other.id, role: "superadmin" }]);
+    } finally {
+      await deleteTestUsers([boss, other]);
+    }
+  });
+
   it("un usuario no puede escribir suscripciones ni pagos", async () => {
     const sub = await a.client.from("subscriptions").insert({
       user_id: a.id,

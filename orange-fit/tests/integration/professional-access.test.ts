@@ -25,6 +25,11 @@ describe("acceso de profesionales", () => {
     pro = await createTestUser("pro-con-acceso", ["professional"]);
     otherPro = await createTestUser("pro-sin-acceso", ["professional"]);
     regular = await createTestUser("pro-regular");
+    // El onboarding exige el permiso de datos de salud; sin él ningún profesional ve nada (ver abajo).
+    const consent = await patient.client
+      .from("consents")
+      .insert({ user_id: patient.id, consent_type: "health_data", version: "2026-10", granted: true });
+    if (consent.error) throw consent.error;
 
     const meal = await patient.client
       .from("meal_logs")
@@ -124,6 +129,29 @@ describe("acceso de profesionales", () => {
       .from("nutrition_targets")
       .insert(targetFixture(patient.id, patient.id, "professional"));
     expect(fake.error?.code).toBe("42501");
+  });
+
+  it("si la persona retira el permiso de datos de salud, el profesional deja de ver y escribir; al volver a darlo, sigue", async () => {
+    const now = new Date().toISOString();
+    const revoked = await patient.client
+      .from("consents")
+      .insert({ user_id: patient.id, consent_type: "health_data", version: "2026-10", granted: false, revoked_at: now });
+    expect(revoked.error).toBeNull();
+    for (const table of readable) {
+      const { data } = await pro.client.from(table).select("id").eq("user_id", patient.id);
+      expect(data ?? [], table).toEqual([]);
+    }
+    const write = await pro.client.from("nutrition_targets").insert(targetFixture(patient.id, pro.id, "professional"));
+    expect(write.error?.code).toBe("42501");
+
+    // El historial manda: la última decisión vuelve a ser «otorgado».
+    await new Promise((r) => setTimeout(r, 5));
+    const regranted = await patient.client
+      .from("consents")
+      .insert({ user_id: patient.id, consent_type: "health_data", version: "2026-10", granted: true });
+    expect(regranted.error).toBeNull();
+    const { data } = await pro.client.from("weight_logs").select("id").eq("user_id", patient.id);
+    expect(data).toHaveLength(1);
   });
 
   it("al revocar el acceso el profesional deja de ver los registros", async () => {

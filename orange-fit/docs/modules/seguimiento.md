@@ -121,8 +121,9 @@ actividad evalúan logros en segundo plano con `after()`.
 - Sin sincronización con Apple Health / Health Connect (ver `docs/INTEGRATIONS.md`).
 - El catálogo MET está pendiente de cotejo con la tabla oficial del Compendium (lo indica la UI).
 - Verduras para retos/insignias: reconocimiento por nombre (no hay categoría en `foods`).
-- Los logros por registros hechos en otras pantallas (diario, recetas, planes) se otorgan al abrir
-  `/app/logros` o al registrar agua/peso/actividad; el diario no llama a `syncAchievements`.
+- Los logros se sincronizan después de registrar agua, peso o actividad, y también tras registrar en el
+  diario, por código de barras o con IA (`after(() => syncAchievementsSafely(…))`). Lo hecho en recetas o
+  planes se refleja al abrir `/app/logros`.
 - La política RLS permite al usuario insertar en `user_badges` y actualizar `user_challenges`
   directamente por la API (contrato del modelo de datos); las insignias no tienen valor económico.
 - No hay e2e de la cámara/compresión (depende de canvas del navegador); se cubre con pruebas de

@@ -12,7 +12,7 @@ Solo hay **una** ruta `/`: `src/app/(marketing)/page.tsx` (el `src/app/page.tsx`
 ### Sitio público (`src/app/(marketing)`)
 - **Layout**: `SiteHeader` + aviso de mantenimiento (`app_settings.maintenance_banner`) + `<main id="contenido">`
   + `SiteFooter` (legales, contacto y «no reemplaza a un profesional de la salud»), enlace «Saltar al
-  contenido», iconos en metadatos y registro del service worker. `loading.tsx` con `Skeleton`.
+  contenido». Los iconos y el registro del service worker están en el layout raíz (`src/app/layout.tsx`). `loading.tsx` con `Skeleton`.
 - **Portada `/`**: hero con propuesta y CTA reales (**Crear cuenta gratis → `/onboarding`**, **Ingresar →
   `/ingresar`**); cómo funciona (3 pasos); 12 funciones (manual, foto, voz, texto, código de barras, plan,
   recetas, compras, progreso, ayuno, agua, asistente) con etiqueta **Gratis/Premium leída de
@@ -26,7 +26,8 @@ Solo hay **una** ruta `/`: `src/app/(marketing)/page.tsx` (el `src/app/page.tsx`
 - **Capturas reales** `/screenshots/{inicio,diario,foto-ia,plan,progreso}.png` en marco de teléfono con
   `<img>` 390×844, `alt` descriptivo, `loading="lazy"` (la del hero `eager` + `fetchPriority="high"`).
   Si el archivo no existe en `public/` se muestra «Captura en preparación» (nunca un mockup ni una imagen
-  rota). Hoy **no existen**: las generará el paso de Playwright.
+  rota). Hoy existen las reales de inicio, diario, plan y progreso (`scripts/capture-screenshots.ts`, lista en
+  `screenshots.available.ts`); la de «foto con IA» necesita IA real y queda «Captura en preparación».
 - **`/?cuenta=eliminada`**: aviso discreto `role="status"` («Tu cuenta fue eliminada…»), cerrar = enlace a `/`.
 - **`/funciones`**: las 3 secciones (registrar, planificar, seguir) con todas las funciones y su plan, y
   «Cómo calculamos tus metas» (Mifflin-St Jeor, factor de actividad, ajuste con topes y pisos, macros y fibra).
@@ -128,16 +129,11 @@ noreferrer nofollow"`. Tope de 60 000 caracteres y de anidación.
   límite anónimo de `/api/errors`).
 
 ## Falta / límites conocidos
-- **Capturas**: no existen todavía (`public/screenshots/`); la portada muestra «Captura en preparación».
-- `RegisterServiceWorker` solo está montado en el sitio público (no se tocó `src/app/layout.tsx`): quien
-  entra directo a `/app` sin pasar por la portada no tiene página sin conexión hasta que active push
-  (seguimiento registra `/sw.js` en ese momento). Ver «Cambios en archivos compartidos».
-- Los iconos (`favicon`, SVG, `apple-touch-icon`) solo se declaran en el layout público; el navegador pide
-  `/favicon.ico` igual en cualquier ruta, pero `/app` no tiene `apple-touch-icon` declarado.
-- `/precios` (pagos) vive fuera de `(marketing)`: no hereda el registro del SW ni los iconos del layout público.
+- **Capturas**: falta la de «foto con IA» (necesita una clave de Anthropic y una foto real); la portada
+  muestra «Captura en preparación» en su lugar.
+- `/precios` (pagos) vive fuera de `(marketing)`: no hereda el encabezado ni el pie del sitio público
+  (el service worker y los iconos sí, porque están en el layout raíz).
 - No hay modo sin conexión para registrar comidas (decisión: nada simulado).
-- `screenshotExists` asume que la captura existe si `public/` no está en el disco del servidor (algunos
-  hostings sirven estáticos desde CDN).
 - No se pudo comprobar con `next dev`/`next build` (prohibido en este paso). La revisión visual se hizo
   renderizando las páginas a HTML con datos reales de la BD local + Tailwind compilado y Chromium a 390 px
   y 1280 px (sin desbordes horizontales, claro y oscuro).
