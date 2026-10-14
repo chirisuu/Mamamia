@@ -18,7 +18,7 @@ export function IntegrationsCard({ status }: { status: IntegrationStatus }) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ul className="grid gap-2 sm:grid-cols-2">
+        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {entries.map(([key, info]) => {
             const ok = status[key];
             const Icon = ok ? CheckCircle2 : CircleDashed;

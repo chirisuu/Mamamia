@@ -20,6 +20,12 @@ Fallos encontrados al juntar los módulos y recorrer la app compilada a 390 px:
 
 | Media | En `/app/perfil/privacidad` (consentimientos) y en la lista de accesos profesionales, las fechas se formateaban sin zona horaria: de 19:00 a 24:00 en Lima el servidor (UTC) mostraba el día siguiente, el navegador otro, y React fallaba al hidratar | `formatInstantDate(iso, zona)` con America/Lima por defecto | `src/lib/format.test.ts`, regla `tests/unit/date-format-guard.test.ts` (ningún `toLocaleDateString` sin `timeZone`), recorrido de humo a las 22:50 de Lima |
 
+| Baja | `/admin` desbordaba 73 px a 390 px: grids sin columnas explícitas (página y lista de integraciones) crecían hasta el ancho de filas con texto `truncate` | `grid-cols-1` en esos contenedores | recorrido de humo |
+
+Resultado de la Fase A: lint 0 · typecheck 0 · 1065 unitarias · 200 de integración · build sin advertencias ·
+E2E 14/14 (registro con correo real, diario, seguridad, integraciones sin credenciales y recorrido de las
+98 rutas por rol a 390 px).
+
 Pendientes para el bucle (lente UX): en `/app/progreso`, las etiquetas «Ritmo semanal» y «Peso de tendencia» se
 cortan con «…» a 390 px.
 
