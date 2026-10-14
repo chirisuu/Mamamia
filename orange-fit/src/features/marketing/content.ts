@@ -230,6 +230,8 @@ export type ScreenshotKey = keyof typeof SCREENSHOTS;
 
 /** Tamaño de referencia de las capturas (CSS px del viewport móvil de Playwright). */
 export const SCREENSHOT_SIZE = { width: 390, height: 844 } as const;
+/** scripts/capture-screenshots.ts toma las capturas a esta densidad (archivo de 780×1688 px). */
+export const SCREENSHOT_PIXEL_RATIO = 2;
 
 export const LEGAL_DOCS = {
   terminos: {

@@ -1,0 +1,28 @@
+# ORANGE FIT — Registro de QA
+
+Lo que encontró cada ronda, qué se corrigió y qué quedó abierto. Método y criterios en
+`docs/QA_PLAN.md`.
+
+## Integración (Fase A)
+
+Fallos encontrados al juntar los módulos y recorrer la app compilada a 390 px:
+
+| Severidad | Fallo | Corrección | Prueba que lo cubre |
+|---|---|---|---|
+| Alta | `/app/perfil` fallaba siempre en producción: la página de servidor llamaba `initials()` de un módulo `"use client"` y se mostraba la pantalla de error | `initials` pasa a `src/lib/initials.ts` | `tests/unit/server-client-boundary.test.ts` (revisa todo `src`), `src/lib/initials.test.ts`, recorrido de humo |
+| Media | `/app/perfil` desbordaba 120 px con un correo largo (la pista del grid crecía al ancho del texto) | `grid-cols-1` en el contenedor | recorrido de humo |
+| Baja | Cinco tablas solo para lectores de pantalla (`sr-only` en `<table>`) ensanchaban la página 3 px | `sr-only` en un `div` que envuelve la tabla | recorrido de humo |
+| Media | `screenshots.ts` miraba `public/` con `fs` en tiempo de ejecución: el build empaquetaba todo el proyecto en el servidor y en un hosting con CDN la captura se daba por existente aunque faltara | lista estática generada (`screenshots.available.ts`) | build sin advertencias |
+| Media | El enlace público de un plan compartido inexistente respondía 200 (por el `loading.tsx` del segmento) | sin `loading.tsx` en `/compartido/plan/[token]` | recorrido de humo |
+| Media | Correos de confirmación y de recuperación con PKCE: abiertos en otro navegador fallaban | plantillas con `token_hash` | `tests/integration/auth-signup.test.ts` canjea desde otro cliente |
+| Alta | `/admin/ia` fallaba siempre en producción: la página de servidor pasaba `format={(n) => …}` a un gráfico `"use client"` (una función no se puede serializar) | prop `valueFormat="usd"` con los formateadores dentro del componente | segunda regla de `tests/unit/server-client-boundary.test.ts`, recorrido de humo |
+| Media | Inicio mostraba «673 kcal restantes» en el anillo y «672» en el desglose (y el diario 673) con un consumo decimal: cada número se redondeaba por separado | se redondea lo consumido una vez, antes de restar | `dashboard-cards.test.tsx` (1750 − 1077.5) |
+
+| Media | En `/app/perfil/privacidad` (consentimientos) y en la lista de accesos profesionales, las fechas se formateaban sin zona horaria: de 19:00 a 24:00 en Lima el servidor (UTC) mostraba el día siguiente, el navegador otro, y React fallaba al hidratar | `formatInstantDate(iso, zona)` con America/Lima por defecto | `src/lib/format.test.ts`, regla `tests/unit/date-format-guard.test.ts` (ningún `toLocaleDateString` sin `timeZone`), recorrido de humo a las 22:50 de Lima |
+
+Pendientes para el bucle (lente UX): en `/app/progreso`, las etiquetas «Ritmo semanal» y «Peso de tendencia» se
+cortan con «…» a 390 px.
+
+## Rondas del bucle (Fase C)
+
+_Todavía no empieza._

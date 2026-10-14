@@ -42,11 +42,18 @@ export function uniqueEmail(label: string): string {
 
 export type E2EUser = { id: string; email: string; password: string };
 
+/** Fecha local de hoy en Lima (YYYY-MM-DD), la zona por defecto de los perfiles. */
+export function todayInLima(): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Lima" }).format(new Date());
+}
+
 type OnboardedOptions = {
   label: string;
   healthFlags?: string[];
   birthDate?: string;
   roles?: string[];
+  /** Suscripción Premium activa por 30 días (fila directa en la base, sin pasar por un proveedor). */
+  premium?: boolean;
 };
 
 /**
@@ -99,7 +106,7 @@ export async function createOnboardedUser(opts: OnboardedOptions): Promise<E2EUs
       source: "auto",
       created_by: id,
     }),
-    db.from("weight_logs").insert({ user_id: id, weight_kg: 70 }),
+    db.from("weight_logs").insert({ user_id: id, weight_kg: 70, local_date: todayInLima() }),
     db.from("consents").insert(
       ["terms", "privacy", "health_data"].map((consent_type) => ({
         user_id: id,
@@ -112,6 +119,19 @@ export async function createOnboardedUser(opts: OnboardedOptions): Promise<E2EUs
   for (const step of steps) {
     const { error: stepError } = await step;
     if (stepError) throw new Error(`Preparar usuario: ${stepError.message}`);
+  }
+  if (opts.premium) {
+    const now = Date.now();
+    const { error: subError } = await db.from("subscriptions").insert({
+      user_id: id,
+      plan_id: "premium",
+      provider: "stripe",
+      provider_subscription_id: `e2e_${randomUUID()}`,
+      status: "active",
+      current_period_start: new Date(now).toISOString(),
+      current_period_end: new Date(now + 30 * 86_400_000).toISOString(),
+    });
+    if (subError) throw new Error(`Suscripción: ${subError.message}`);
   }
   if (opts.roles?.length) {
     const { error: roleError } = await db.from("user_roles").insert(opts.roles.map((role) => ({ user_id: id, role })));

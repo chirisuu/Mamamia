@@ -42,6 +42,8 @@ describe("manifest", () => {
     expect(manifest).not.toHaveProperty("screenshots");
     const withShots = buildManifest("X", { inicio: true, diario: false });
     expect(withShots.screenshots?.map((s) => s.src)).toEqual(["/screenshots/inicio.png"]);
+    // Tamaño real del PNG que genera scripts/capture-screenshots.ts (390×844 a densidad 2).
+    expect(withShots.screenshots?.[0]?.sizes).toBe("780x1688");
   });
 
   it("short_name corto", () => {

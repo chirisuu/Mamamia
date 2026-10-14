@@ -91,7 +91,7 @@ export default async function AdminAiPage({ searchParams }: Props) {
               data={monthKeys.map((m) => ({ label: formatMonth(m), value: byMonth.get(m)?.costUsd ?? 0 }))}
               caption="Costo estimado de IA por mes en dólares"
               valueLabel="Costo (US$)"
-              format={(n) => formatUsd(n)}
+              valueFormat="usd"
             />
           </CardContent>
         </Card>

@@ -84,17 +84,20 @@ export function MeasurementsChart({ rows, advanced, since }: { rows: Measurement
               </LineChart>
             </ResponsiveContainer>
           </div>
-          <table className="sr-only">
-            <caption>{field.label} por fecha</caption>
-            <tbody>
-              {series.map((p) => (
-                <tr key={p.date}>
-                  <th scope="row">{formatShortDate(p.date)}</th>
-                  <td>{formatNumber(p.value, 1)} cm</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {/* sr-only en un div: una <table> ignora width:1px y desborda el ancho de la pantalla. */}
+          <div className="sr-only">
+            <table>
+              <caption>{field.label} por fecha</caption>
+              <tbody>
+                {series.map((p) => (
+                  <tr key={p.date}>
+                    <th scope="row">{formatShortDate(p.date)}</th>
+                    <td>{formatNumber(p.value, 1)} cm</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </figure>
       ) : null}
       {!advanced ? (

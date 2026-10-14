@@ -37,6 +37,16 @@ describe("CalorieCard", () => {
     expect(screen.getByText("Restante")).toBeInTheDocument();
   });
 
+  it("con consumo decimal, el anillo y el desglose muestran el mismo restante", () => {
+    // 1750 − 1077.5: redondear por separado daba 673 en el anillo y 672 en el desglose.
+    const budget = buildBudgetBreakdown({ targetKcal: 1750, exerciseKcal: 0, countExercise: false, consumedKcal: 1077.5 });
+    render(<CalorieCard budget={budget} consumedKcal={1077.5} />);
+    const ring = screen.getByRole("group", { name: "Calorías de hoy" });
+    expect(within(ring).getByText("672")).toBeInTheDocument();
+    expect(screen.getByText("672 kcal")).toBeInTheDocument();
+    expect(screen.getByText("− 1,078 kcal")).toBeInTheDocument();
+  });
+
   it("sin meta invita a definirla", () => {
     render(<CalorieCard budget={null} consumedKcal={300} />);
     expect(screen.getByRole("link", { name: "Definir mi meta" })).toHaveAttribute("href", "/app/perfil/metas");

@@ -83,25 +83,28 @@ export function WeeklyChart({ data }: { data: WeeklyPoint[] }) {
           </span>
         ) : null}
       </figcaption>
-      <table className="sr-only">
-        <caption>Calorías consumidas y meta de los últimos 7 días</caption>
-        <thead>
-          <tr>
-            <th scope="col">Día</th>
-            <th scope="col">Consumido</th>
-            <th scope="col">Meta</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((d) => (
-            <tr key={d.date}>
-              <th scope="row">{formatShortDate(d.date)}</th>
-              <td>{d.consumed == null ? "Sin registro" : `${formatNumber(d.consumed)} kcal`}</td>
-              <td>{d.target == null ? "Sin meta" : `${formatNumber(d.target)} kcal`}</td>
+      {/* sr-only en un div: una <table> ignora width:1px y desborda el ancho de la pantalla. */}
+      <div className="sr-only">
+        <table>
+          <caption>Calorías consumidas y meta de los últimos 7 días</caption>
+          <thead>
+            <tr>
+              <th scope="col">Día</th>
+              <th scope="col">Consumido</th>
+              <th scope="col">Meta</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {data.map((d) => (
+              <tr key={d.date}>
+                <th scope="row">{formatShortDate(d.date)}</th>
+                <td>{d.consumed == null ? "Sin registro" : `${formatNumber(d.consumed)} kcal`}</td>
+                <td>{d.target == null ? "Sin meta" : `${formatNumber(d.target)} kcal`}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </figure>
   );
 }

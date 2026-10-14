@@ -107,25 +107,28 @@ export function WaterHistory({ history }: { history: WaterDay[] }) {
             </span>
           ) : null}
         </figcaption>
-        <table className="sr-only">
-          <caption>Agua registrada por día</caption>
-          <thead>
-            <tr>
-              <th scope="col">Día</th>
-              <th scope="col">Agua</th>
-              <th scope="col">Meta</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((d) => (
-              <tr key={d.date}>
-                <th scope="row">{formatShortDate(d.date)}</th>
-                <td>{d.ml == null ? "Sin registro" : formatMl(d.ml)}</td>
-                <td>{d.targetMl == null ? "Sin meta" : formatMl(d.targetMl)}</td>
+        {/* sr-only en un div: una <table> ignora width:1px y desborda el ancho de la pantalla. */}
+        <div className="sr-only">
+          <table>
+            <caption>Agua registrada por día</caption>
+            <thead>
+              <tr>
+                <th scope="col">Día</th>
+                <th scope="col">Agua</th>
+                <th scope="col">Meta</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {data.map((d) => (
+                <tr key={d.date}>
+                  <th scope="row">{formatShortDate(d.date)}</th>
+                  <td>{d.ml == null ? "Sin registro" : formatMl(d.ml)}</td>
+                  <td>{d.targetMl == null ? "Sin meta" : formatMl(d.targetMl)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </figure>
     </div>
   );

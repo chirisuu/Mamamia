@@ -33,15 +33,4 @@ function AvatarFallback({ className, ...props }: React.ComponentProps<typeof Ava
   );
 }
 
-/** Iniciales para el fallback: "María José" → "MJ". */
-function initials(name: string | null | undefined): string {
-  if (!name) return "";
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join("");
-}
-
-export { Avatar, AvatarImage, AvatarFallback, initials };
+export { Avatar, AvatarImage, AvatarFallback };

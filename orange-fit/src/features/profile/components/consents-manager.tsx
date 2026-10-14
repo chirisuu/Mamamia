@@ -18,12 +18,12 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/sonner";
 import { CONSENT_INFO, CONSENT_ORDER, type ConsentType } from "@/features/auth/consents";
 import { revokeHealthConsent, setConsent } from "../actions";
+import { formatInstantDate } from "@/lib/format";
 
 export type ConsentStatus = { granted: boolean; at: string | null; version: string | null };
 
 function formatDate(iso: string | null): string {
-  if (!iso) return "";
-  return new Date(iso).toLocaleDateString("es-PE", { day: "numeric", month: "short", year: "numeric" });
+  return iso ? formatInstantDate(iso) : "";
 }
 
 function statusText(s: ConsentStatus | undefined): string {

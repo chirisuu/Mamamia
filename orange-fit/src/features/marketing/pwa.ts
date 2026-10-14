@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { SCREENSHOTS, SCREENSHOT_SIZE, type ScreenshotKey } from "./content";
+import { SCREENSHOTS, SCREENSHOT_PIXEL_RATIO, SCREENSHOT_SIZE, type ScreenshotKey } from "./content";
 
 /**
  * Manifiesto de la PWA. Puro (sin I/O) para poder probarlo: `src/app/manifest.ts` le pasa el nombre
@@ -28,9 +28,8 @@ export function buildManifest(appName: string, screenshots: Partial<Record<Scree
     .filter((key) => screenshots[key])
     .map((key) => ({
       src: SCREENSHOTS[key].file,
-      // Las capturas son de 390×844 CSS px; el archivo real puede tener más densidad, pero la
-      // proporción es la misma y los navegadores la usan solo para la vista previa.
-      sizes: `${SCREENSHOT_SIZE.width}x${SCREENSHOT_SIZE.height}`,
+      // Tamaño real del archivo en píxeles (el manifest lo exige así para mostrar la vista previa).
+      sizes: `${SCREENSHOT_SIZE.width * SCREENSHOT_PIXEL_RATIO}x${SCREENSHOT_SIZE.height * SCREENSHOT_PIXEL_RATIO}`,
       type: "image/png",
       form_factor: "narrow" as const,
       label: SCREENSHOTS[key].alt,

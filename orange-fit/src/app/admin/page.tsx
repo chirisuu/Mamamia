@@ -35,10 +35,10 @@ export default async function AdminDashboardPage() {
   ]);
 
   return (
-    <div className="grid gap-8">
+    <div className="grid grid-cols-1 gap-8">
       <PageHeader eyebrow="Panel" title="Dashboard" description="Pendientes del equipo, uso de la app e integraciones. Solo agregados: aquí no hay datos personales." />
 
-      <section aria-labelledby="pendientes" className="grid gap-3">
+      <section aria-labelledby="pendientes" className="grid grid-cols-1 gap-3">
         <h2 id="pendientes" className="text-lg font-semibold tracking-tight">
           Pendientes
         </h2>
@@ -98,7 +98,7 @@ function MetricsSection({ m }: { m: AdminMetrics }) {
     .sort((a, b) => b.value - a.value);
 
   return (
-    <section aria-labelledby="metricas" className="grid gap-4">
+    <section aria-labelledby="metricas" className="grid grid-cols-1 gap-4">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <h2 id="metricas" className="text-lg font-semibold tracking-tight">
           Uso y negocio

@@ -10,6 +10,8 @@ import type { BudgetBreakdown } from "../lib/budget";
  * ajustes y consumido. Así no hay doble conteo y el usuario ve de dónde sale cada número.
  */
 export function CalorieCard({ budget, consumedKcal }: { budget: BudgetBreakdown | null; consumedKcal: number }) {
+  // Se redondea una vez, como en el desglose: si no, 1750 − 1077.5 da 673 en el anillo y 672 abajo.
+  const consumed = Math.round(consumedKcal);
   return (
     <Card className="gap-4">
       <CardHeader>
@@ -19,7 +21,7 @@ export function CalorieCard({ budget, consumedKcal }: { budget: BudgetBreakdown 
       <CardContent className="grid items-center gap-5 sm:grid-cols-[auto_1fr]">
         <ProgressRing
           className="mx-auto"
-          consumed={consumedKcal}
+          consumed={consumed}
           goal={budget?.budget.total ?? null}
           label="Calorías de hoy"
           size={208}

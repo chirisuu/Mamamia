@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Bell, Crown, FileText, Moon, ShieldCheck, Stethoscope, Target, UserRound, LogOut } from "lucide-react";
 import { AppHeader } from "@/components/app/app-header";
-import { Avatar, AvatarFallback, initials } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { initials } from "@/lib/initials";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -23,7 +24,7 @@ export default async function ProfileHubPage() {
   return (
     <>
       <AppHeader title="Perfil" />
-      <div className="grid gap-6 pb-8 pt-2">
+      <div className="grid grid-cols-1 gap-6 pb-8 pt-2">
         <section aria-label="Tu cuenta" className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
           <Avatar className="size-14 text-lg">
             <AvatarFallback>{initials(name)}</AvatarFallback>

@@ -18,6 +18,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { toast } from "@/components/ui/sonner";
 import { revokeProfessionalAccess } from "../actions";
 import { SCOPE_LABELS, type ProfessionalScope } from "../schemas";
+import { formatInstantDate } from "@/lib/format";
 
 export type AccessItem = {
   id: string;
@@ -28,7 +29,7 @@ export type AccessItem = {
   revokedAt: string | null;
 };
 
-const fmt = (iso: string) => new Date(iso).toLocaleDateString("es-PE", { day: "numeric", month: "short", year: "numeric" });
+const fmt = (iso: string) => formatInstantDate(iso);
 
 export function AccessList({ items }: { items: AccessItem[] }) {
   if (items.length === 0) {

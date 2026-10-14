@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { formatNumber } from "@/lib/format";
+import { formatUsd } from "../lib/metrics";
 
 export type BarDatum = { label: string; value: number; hint?: string };
 
@@ -30,19 +31,30 @@ const compact = (v: number) => (v >= 1000 ? `${formatNumber(v / 1000, 1)}k` : fo
  * Barras simples con etiqueta en el eje (el color no es la única señal) y una tabla para lectores
  * de pantalla con los mismos números.
  */
+/**
+ * Formato de los valores. Es un nombre y no una función porque las páginas que lo usan son de
+ * servidor: una función no se puede pasar como prop a un componente de cliente.
+ */
+export type BarValueFormat = "number" | "usd";
+const FORMATTERS: Record<BarValueFormat, (n: number) => string> = {
+  number: (n) => formatNumber(n),
+  usd: (n) => formatUsd(n),
+};
+
 export function SimpleBarChart({
   data,
   caption,
   valueLabel,
-  format = (n) => formatNumber(n),
+  valueFormat = "number",
   multicolor = false,
 }: {
   data: BarDatum[];
   caption: string;
   valueLabel: string;
-  format?: (n: number) => string;
+  valueFormat?: BarValueFormat;
   multicolor?: boolean;
 }) {
+  const format = FORMATTERS[valueFormat];
   const empty = data.every((d) => d.value === 0);
   return (
     <figure className="grid gap-3">
@@ -66,23 +78,26 @@ export function SimpleBarChart({
         </div>
       )}
       <figcaption className="text-xs text-muted-foreground">{caption}</figcaption>
-      <table className="sr-only">
-        <caption>{caption}</caption>
-        <thead>
-          <tr>
-            <th scope="col">Categoría</th>
-            <th scope="col">{valueLabel}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((d) => (
-            <tr key={d.label}>
-              <th scope="row">{d.label}</th>
-              <td>{format(d.value)}</td>
+      {/* sr-only en un div: una <table> ignora width:1px y desborda el ancho de la pantalla. */}
+      <div className="sr-only">
+        <table>
+          <caption>{caption}</caption>
+          <thead>
+            <tr>
+              <th scope="col">Categoría</th>
+              <th scope="col">{valueLabel}</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {data.map((d) => (
+              <tr key={d.label}>
+                <th scope="row">{d.label}</th>
+                <td>{format(d.value)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </figure>
   );
 }

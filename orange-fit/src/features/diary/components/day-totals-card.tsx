@@ -11,7 +11,8 @@ import type { DayTotals } from "../lib/day-totals";
 /** Totales del día frente a la meta vigente en esa fecha. Pasarse se informa en tono neutro. */
 export function DayTotalsCard({ totals, target }: { totals: DayTotals; target: NutritionTargetRow | null }) {
   const goal = target ? Number(target.energy_kcal) : null;
-  const consumed = totals.energyKcal;
+  // Redondeado antes de restar: lo que se muestra cuadra (1,078 consumidas → 672 restantes de 1,750).
+  const consumed = Math.round(totals.energyKcal);
   const diff = goal != null ? goal - consumed : null;
   const pct = goal ? Math.min(100, (consumed / goal) * 100) : 0;
   const fiberIncomplete = totals.incomplete.includes("fiberG");

@@ -132,25 +132,28 @@ export function WeightChart({
               </span>
             ) : null}
           </figcaption>
-          <table className="sr-only">
-            <caption>Pesajes y promedio de 7 días</caption>
-            <thead>
-              <tr>
-                <th scope="col">Fecha</th>
-                <th scope="col">Peso</th>
-                <th scope="col">Promedio 7 días</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((p) => (
-                <tr key={p.date}>
-                  <th scope="row">{formatShortDate(p.date)}</th>
-                  <td>{formatKg(p.weightKg)}</td>
-                  <td>{p.average == null ? "Sin promedio" : formatKg(p.average)}</td>
+          {/* sr-only en un div: una <table> ignora width:1px y desborda el ancho de la pantalla. */}
+          <div className="sr-only">
+            <table>
+              <caption>Pesajes y promedio de 7 días</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Fecha</th>
+                  <th scope="col">Peso</th>
+                  <th scope="col">Promedio 7 días</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {data.map((p) => (
+                  <tr key={p.date}>
+                    <th scope="row">{formatShortDate(p.date)}</th>
+                    <td>{formatKg(p.weightKg)}</td>
+                    <td>{p.average == null ? "Sin promedio" : formatKg(p.average)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </figure>
       )}
     </div>

@@ -1,3 +1,5 @@
+import { DEFAULT_TIMEZONE } from "./dates";
+
 /** Formato es-PE: punto decimal, separador de miles con coma, fechas cortas en español. */
 const LOCALE = "es-PE";
 
@@ -34,6 +36,16 @@ export function formatShortDate(isoDate: string): string {
 export function formatLongDate(isoDate: string): string {
   const d = new Date(`${isoDate}T12:00:00Z`);
   return d.toLocaleDateString(LOCALE, { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
+}
+
+/**
+ * "13 oct 2026" para un instante (timestamptz). La zona va explícita: sin ella el servidor (UTC) y
+ * el navegador (Lima) pintan días distintos cerca de medianoche y React falla al hidratar.
+ */
+export function formatInstantDate(iso: string, timeZone: string = DEFAULT_TIMEZONE): string {
+  return new Date(iso)
+    .toLocaleDateString(LOCALE, { day: "numeric", month: "short", year: "numeric", timeZone })
+    .replace(/\./g, "");
 }
 
 export function formatDuration(minutes: number): string {
