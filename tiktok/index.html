@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="es-PE">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Videos de TikTok</title>
+<meta name="description" content="Todos los videos de una cuenta de TikTok en una lista, con los nuevos marcados.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0d0d0d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TikToks">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23e8174a'/%3E%3Cpath d='M25 18v28l22-14z' fill='%23fff'/%3E%3C/svg%3E">
+<style>
+:root {
+  color-scheme: dark;
+  --plano:#0d0d0d; --superficie:#1a1a19; --superficie-2:#232322; --superficie-3:#2c2c2a;
+  --tinta:#ffffff; --tinta-2:#c3c2b7; --tinta-3:#898781;
+  --borde:rgba(255,255,255,.12);
+  --acento:#e8174a; --acento-txt:#ff6b8b;
+  --aviso:#fab219; --bien-txt:#3cc13c;
+  --r:16px;
+}
+* { box-sizing:border-box; }
+html, body { margin:0; background:var(--plano); color:var(--tinta); }
+body {
+  font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  padding: env(safe-area-inset-top) 0 calc(24px + env(safe-area-inset-bottom));
+  -webkit-text-size-adjust:100%;
+}
+a { color:var(--acento-txt); }
+button { font:inherit; color:inherit; }
+:focus-visible { outline:2px solid var(--acento-txt); outline-offset:2px; border-radius:8px; }
+.envoltura { max-width:1080px; margin:0 auto; padding:0 16px; }
+
+header { padding:20px 0 8px; display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
+.avatar {
+  width:56px; height:56px; border-radius:50%; flex:none; display:grid; place-items:center;
+  background:linear-gradient(135deg,#25f4ee,#e8174a); font-weight:800; font-size:1.4rem; color:#0d0d0d;
+}
+.cabeza { flex:1 1 200px; min-width:0; }
+h1 { font-size:1.35rem; margin:0; overflow-wrap:anywhere; }
+.sub { color:var(--tinta-3); font-size:.9rem; margin-top:2px; }
+.btn {
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  min-height:44px; padding:0 16px; border-radius:12px; cursor:pointer; text-decoration:none;
+  border:1px solid var(--borde); background:var(--superficie-2); color:var(--tinta); font-weight:600;
+}
+.btn.primario { background:var(--acento); border-color:var(--acento); color:#fff; }
+.btn.chico { min-height:36px; padding:0 12px; font-size:.88rem; border-radius:10px; }
+
+.aviso {
+  margin:10px 0; padding:12px 14px; border-radius:12px; background:var(--superficie);
+  border:1px solid var(--borde); color:var(--tinta-2); font-size:.92rem;
+}
+.aviso.error { border-color:rgba(250,178,25,.45); }
+.aviso b { color:var(--tinta); }
+
+.barra { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:14px 0; }
+.seg { display:flex; background:var(--superficie); border:1px solid var(--borde); border-radius:12px; padding:3px; gap:3px; }
+.seg button {
+  min-height:38px; padding:0 14px; border:0; border-radius:9px; background:transparent;
+  cursor:pointer; color:var(--tinta-2); font-weight:600; white-space:nowrap;
+}
+.seg button[aria-pressed="true"] { background:var(--superficie-3); color:var(--tinta); }
+.contador {
+  display:inline-block; min-width:20px; padding:0 6px; margin-left:4px; border-radius:99px;
+  background:var(--acento); color:#fff; font-size:.75rem; line-height:20px; text-align:center;
+}
+input[type=search] {
+  flex:1 1 180px; min-width:0; min-height:44px; padding:0 14px; border-radius:12px;
+  border:1px solid var(--borde); background:var(--superficie); color:var(--tinta); font:inherit;
+}
+
+.rejilla { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; }
+@media (max-width:420px) { .rejilla { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; } }
+.tarjeta {
+  position:relative; display:flex; flex-direction:column; text-align:left; padding:0; cursor:pointer;
+  border:1px solid var(--borde); border-radius:var(--r); background:var(--superficie); overflow:hidden;
+}
+.tarjeta:hover .portada img { transform:scale(1.03); }
+.portada {
+  position:relative; aspect-ratio:9/16; background:
+    radial-gradient(120% 80% at 30% 20%, rgba(37,244,238,.18), transparent 60%),
+    radial-gradient(120% 80% at 70% 90%, rgba(232,23,74,.22), transparent 60%), var(--superficie-2);
+  overflow:hidden;
+}
+.portada img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .25s; }
+.portada .play {
+  position:absolute; inset:0; margin:auto; width:48px; height:48px; border-radius:50%;
+  background:rgba(0,0,0,.55); display:grid; place-items:center;
+}
+.portada .dur {
+  position:absolute; right:8px; bottom:8px; padding:1px 7px; border-radius:6px;
+  background:rgba(0,0,0,.65); font-size:.78rem; font-variant-numeric:tabular-nums;
+}
+.etiqueta {
+  position:absolute; left:8px; top:8px; padding:2px 8px; border-radius:99px;
+  background:var(--acento); color:#fff; font-size:.72rem; font-weight:800; letter-spacing:.04em;
+}
+.tarjeta.visto .etiqueta { display:none; }
+.info { padding:10px 11px 12px; display:flex; flex-direction:column; gap:4px; }
+.info .titulo {
+  font-size:.9rem; color:var(--tinta); display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;
+  overflow:hidden; overflow-wrap:anywhere;
+}
+.info .fecha { font-size:.78rem; color:var(--tinta-3); }
+.vacio { text-align:center; color:var(--tinta-3); padding:40px 16px; }
+
+.en-vivo { display:flex; justify-content:center; }
+.en-vivo blockquote { margin:0 !important; max-width:780px; width:100%; }
+
+dialog {
+  padding:0; border:0; background:transparent; color:var(--tinta);
+  width:min(420px, calc(100vw - 32px)); max-height:calc(100dvh - 32px);
+}
+dialog::backdrop { background:rgba(0,0,0,.82); }
+.marco {
+  background:var(--superficie); border:1px solid var(--borde); border-radius:var(--r); overflow:hidden;
+  display:flex; flex-direction:column; max-height:calc(100dvh - 32px);
+}
+.marco iframe { width:100%; aspect-ratio:9/16; max-height:calc(100dvh - 150px); border:0; display:block; background:#000; }
+.marco .pie { padding:12px; display:flex; gap:8px; align-items:center; }
+.marco .pie p { margin:0; flex:1; font-size:.85rem; color:var(--tinta-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+</style>
+</head>
+<body>
+<div class="envoltura">
+  <header>
+    <div class="avatar" id="inicial" aria-hidden="true">C</div>
+    <div class="cabeza">
+      <h1 id="nombre">@claudesinpermiso</h1>
+      <div class="sub" id="resumen">Cargando…</div>
+    </div>
+    <a class="btn" id="perfil" href="https://www.tiktok.com/@claudesinpermiso" target="_blank" rel="noopener">Abrir en TikTok ↗</a>
+  </header>
+
+  <div id="avisos"></div>
+
+  <div class="barra">
+    <div class="seg" role="group" aria-label="Qué ver">
+      <button type="button" data-vista="todos" aria-pressed="true">Todos</button>
+      <button type="button" data-vista="nuevos" aria-pressed="false">Nuevos<span class="contador" id="nNuevos" hidden>0</span></button>
+      <button type="button" data-vista="vivo" aria-pressed="false">Perfil en vivo</button>
+    </div>
+    <input type="search" id="buscar" placeholder="Buscar en las descripciones" aria-label="Buscar">
+    <button type="button" class="btn chico" id="todoVisto" hidden>Marcar todo como visto</button>
+  </div>
+
+  <main>
+    <div class="rejilla" id="rejilla"></div>
+    <div class="vacio" id="vacio" hidden></div>
+    <div class="en-vivo" id="vivo" hidden></div>
+  </main>
+</div>
+
+<dialog id="reproductor" aria-label="Video">
+  <div class="marco">
+    <iframe id="marco" title="Video de TikTok" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen></iframe>
+    <div class="pie">
+      <p id="marcoTitulo"></p>
+      <a class="btn chico" id="marcoLink" target="_blank" rel="noopener">TikTok ↗</a>
+      <button type="button" class="btn chico primario" id="cerrar">Cerrar</button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+"use strict";
+const $ = (s) => document.querySelector(s);
+const CUENTA_POR_DEFECTO = "claudesinpermiso";
+
+/* ---------- memoria de este navegador (qué videos ya abriste) ---------- */
+const mem = {
+  leer(k, d) { try { const v = localStorage.getItem("tt:" + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  poner(k, v) { try { localStorage.setItem("tt:" + k, JSON.stringify(v)); } catch {} },
+};
+let vistos = new Set(mem.leer("vistos", []));
+let primeraVisita = mem.leer("primeraVisita", null);
+
+let datos = { cuenta: CUENTA_POR_DEFECTO, videos: [] };
+let vista = "todos";
+
+const fmtFecha = (ts) => ts ? new Date(ts * 1000).toLocaleDateString("es-PE", { day: "numeric", month: "short", year: "numeric" }) : "";
+const fmtDur = (s) => s ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : "";
+const haceCuanto = (iso) => {
+  if (!iso) return "";
+  const min = Math.round((Date.now() - new Date(iso)) / 60000);
+  if (min < 60) return `hace ${Math.max(min, 1)} min`;
+  const h = Math.round(min / 60);
+  if (h < 48) return `hace ${h} h`;
+  return `hace ${Math.round(h / 24)} días`;
+};
+
+/* Nuevo = descubierto después de tu primera visita y todavía no lo abriste. */
+const esNuevo = (v) => !vistos.has(v.id) && primeraVisita && v.descubierto && v.descubierto > primeraVisita;
+
+function marcarVisto(id) {
+  vistos.add(id);
+  mem.poner("vistos", [...vistos]);
+}
+
+/* ---------- portadas: TikTok las da por oEmbed (caducan, así que se piden en vivo) ---------- */
+const cachePortadas = mem.leer("portadas", {});
+const observador = "IntersectionObserver" in window ? new IntersectionObserver((ents) => {
+  for (const e of ents) if (e.isIntersecting) { observador.unobserve(e.target); cargarPortada(e.target); }
+}, { rootMargin: "300px" }) : null;
+
+async function cargarPortada(caja) {
+  const { id, url } = caja.dataset;
+  const enCache = cachePortadas[id];
+  let src = enCache && Date.now() - enCache.t < 12 * 3600e3 ? enCache.u : null;
+  if (!src) {
+    try {
+      const r = await fetch("https://www.tiktok.com/oembed?url=" + encodeURIComponent(url));
+      src = (await r.json()).thumbnail_url;
+      if (src) { cachePortadas[id] = { u: src, t: Date.now() }; mem.poner("portadas", cachePortadas); }
+    } catch { /* sin portada: queda el fondo de colores */ }
+  }
+  if (!src) return;
+  const img = new Image();
+  img.alt = ""; img.loading = "lazy"; img.decoding = "async";
+  img.onload = () => caja.prepend(img);
+  img.onerror = () => { delete cachePortadas[id]; mem.poner("portadas", cachePortadas); };
+  img.src = src;
+}
+
+/* ---------- pintar ---------- */
+function pintar() {
+  const nuevos = datos.videos.filter(esNuevo);
+  const n = $("#nNuevos");
+  n.textContent = nuevos.length; n.hidden = !nuevos.length;
+  $("#todoVisto").hidden = !nuevos.length || vista === "vivo";
+
+  const enVivo = vista === "vivo";
+  $("#vivo").hidden = !enVivo;
+  $("#rejilla").hidden = enVivo;
+  $("#buscar").hidden = enVivo;
+  if (enVivo) { $("#vacio").hidden = true; return cargarEnVivo(); }
+
+  const q = $("#buscar").value.trim().toLowerCase();
+  let lista = vista === "nuevos" ? nuevos : datos.videos;
+  if (q) lista = lista.filter((v) => (v.titulo || "").toLowerCase().includes(q));
+
+  const rejilla = $("#rejilla");
+  rejilla.replaceChildren(...lista.map(tarjeta));
+  const vacio = $("#vacio");
+  vacio.hidden = !!lista.length;
+  if (!lista.length) {
+    vacio.textContent = q ? "Ningún video coincide con la búsqueda."
+      : vista === "nuevos" ? "No hay videos nuevos desde tu última visita. 🎉"
+      : "Todavía no hay videos guardados. Mira el «Perfil en vivo» mientras tanto.";
+  }
+}
+
+function tarjeta(v) {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "tarjeta" + (esNuevo(v) ? "" : " visto");
+  b.setAttribute("aria-label", (esNuevo(v) ? "Nuevo. " : "") + (v.titulo || "Video sin descripción"));
+
+  const portada = document.createElement("div");
+  portada.className = "portada";
+  portada.dataset.id = v.id; portada.dataset.url = v.url;
+  portada.innerHTML = `<span class="play" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="#fff"/></svg></span>`;
+  if (v.duracion) portada.insertAdjacentHTML("beforeend", `<span class="dur">${fmtDur(v.duracion)}</span>`);
+  portada.insertAdjacentHTML("beforeend", `<span class="etiqueta">NUEVO</span>`);
+
+  const info = document.createElement("div");
+  info.className = "info";
+  const t = document.createElement("div"); t.className = "titulo"; t.textContent = v.titulo || "Sin descripción";
+  const f = document.createElement("div"); f.className = "fecha"; f.textContent = fmtFecha(v.fecha);
+  info.append(t, f);
+
+  b.append(portada, info);
+  b.addEventListener("click", () => abrir(v, b));
+  observador ? observador.observe(portada) : cargarPortada(portada);
+  return b;
+}
+
+/* ---------- reproductor ---------- */
+const dlg = $("#reproductor");
+function abrir(v, boton) {
+  marcarVisto(v.id);
+  boton.classList.add("visto");
+  $("#marco").src = `https://www.tiktok.com/player/v1/${v.id}?autoplay=1&rel=0&description=1`;
+  $("#marcoTitulo").textContent = v.titulo || "";
+  $("#marcoLink").href = v.url;
+  if (dlg.showModal) dlg.showModal(); else window.open(v.url, "_blank");
+  pintarContador();
+}
+function cerrar() { $("#marco").src = "about:blank"; if (dlg.open) dlg.close(); }
+$("#cerrar").addEventListener("click", cerrar);
+dlg.addEventListener("close", () => { $("#marco").src = "about:blank"; if (vista === "nuevos") pintar(); });
+dlg.addEventListener("click", (e) => { if (e.target === dlg) cerrar(); });
+
+function pintarContador() {
+  const k = datos.videos.filter(esNuevo).length;
+  const n = $("#nNuevos"); n.textContent = k; n.hidden = !k;
+  $("#todoVisto").hidden = !k || vista === "vivo";
+}
+
+/* ---------- perfil en vivo: la inserción oficial de TikTok ---------- */
+let vivoCargado = false;
+function cargarEnVivo() {
+  if (vivoCargado) return;
+  vivoCargado = true;
+  const c = datos.cuenta;
+  $("#vivo").innerHTML = `<blockquote class="tiktok-embed" cite="https://www.tiktok.com/@${c}" data-unique-id="${c}" data-embed-type="creator">
+    <section><a target="_blank" rel="noopener" href="https://www.tiktok.com/@${c}">@${c}</a></section></blockquote>`;
+  const s = document.createElement("script");
+  s.src = "https://www.tiktok.com/embed.js"; s.async = true;
+  document.body.append(s);
+}
+
+/* ---------- controles ---------- */
+document.querySelectorAll(".seg button").forEach((b) => b.addEventListener("click", () => {
+  vista = b.dataset.vista;
+  document.querySelectorAll(".seg button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  mem.poner("vista", vista);
+  pintar();
+}));
+$("#buscar").addEventListener("input", pintar);
+$("#todoVisto").addEventListener("click", () => {
+  datos.videos.forEach((v) => vistos.add(v.id));
+  mem.poner("vistos", [...vistos]);
+  pintar();
+});
+
+/* ---------- arranque ---------- */
+function aviso(html, clase = "") {
+  const d = document.createElement("div");
+  d.className = "aviso " + clase; d.innerHTML = html;
+  $("#avisos").append(d);
+}
+
+async function arrancar() {
+  try {
+    const r = await fetch("videos.json?" + Date.now(), { cache: "no-store" });
+    if (!r.ok) throw new Error(r.status);
+    datos = await r.json();
+  } catch (e) {
+    const local = location.protocol === "file:";
+    aviso(local
+      ? "Abriste el archivo directo desde tu equipo, así que el navegador no deja leer la lista. Publícala con GitHub Pages para verla completa. Mientras tanto tienes el <b>Perfil en vivo</b>."
+      : "Todavía no hay lista de videos: se crea en la primera revisión automática (cada 3 horas, o al pulsar <b>Run workflow</b> en la pestaña Actions de GitHub). Mientras tanto tienes el <b>Perfil en vivo</b>.");
+    datos.sinLista = true;
+  }
+
+  const c = datos.cuenta || CUENTA_POR_DEFECTO;
+  datos.cuenta = c;
+  $("#nombre").textContent = "@" + c;
+  $("#inicial").textContent = c[0].toUpperCase();
+  $("#perfil").href = `https://www.tiktok.com/@${c}`;
+  document.title = `@${c} · TikTok`;
+
+  // La primera visita fija el punto de partida: desde ahí, lo que llegue se marca como nuevo.
+  if (!primeraVisita) {
+    primeraVisita = new Date().toISOString();
+    mem.poner("primeraVisita", primeraVisita);
+  }
+
+  const partes = [];
+  if (!datos.sinLista) partes.push(`${datos.videos.length} videos guardados`);
+  if (datos.revisado) partes.push(`lista actualizada ${haceCuanto(datos.revisado)}`);
+  $("#resumen").textContent = partes.join(" · ") || "Videos de TikTok";
+
+  if (datos.estado === "error") {
+    aviso(`<b>La última revisión no pudo leer TikTok</b> (${haceCuanto(datos.error_desde)}). TikTok a veces bloquea las revisiones automáticas; se vuelve a intentar sola cada 3 horas. Los videos de abajo son los últimos que se guardaron, y el <b>Perfil en vivo</b> siempre muestra lo más reciente.`, "error");
+  }
+
+  const guardada = mem.leer("vista", "todos");
+  vista = datos.sinLista ? "vivo" : guardada;
+  document.querySelectorAll(".seg button").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.vista === vista)));
+  pintar();
+}
+arrancar();
+</script>
+</body>
+</html>

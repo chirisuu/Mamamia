@@ -7,6 +7,9 @@ Sin instalación, sin servidor, sin cuenta. Moneda: soles peruanos (S/).
 
 > En este repo también vive **MiCoach**, una app de dieta y entrenamiento con la misma idea de
 > un solo archivo: está en [`micoach/`](micoach/README.md).
+>
+> Y en [`tiktok/`](tiktok/README.md) hay un seguidor de cuentas de TikTok: lista los videos y
+> te avisa con un issue de GitHub cada vez que suben uno nuevo.
 
 ## Cómo usarlo
 

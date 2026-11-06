@@ -1,0 +1,81 @@
+name: Revisar TikTok
+
+on:
+  schedule:
+    - cron: "17 */3 * * *"   # cada 3 horas
+  workflow_dispatch:          # botón "Run workflow" para revisar ahora
+
+permissions:
+  contents: write   # guardar tiktok/videos.json
+  issues: write     # abrir un aviso por cada video nuevo
+
+concurrency:
+  group: revisar-tiktok
+  cancel-in-progress: false
+
+jobs:
+  revisar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar yt-dlp
+        run: pip install --upgrade "yt-dlp[default,curl-cffi]"
+
+      - name: Revisar la cuenta
+        run: python tiktok/revisar.py --nuevos "$RUNNER_TEMP/nuevos.json"
+
+      - name: Guardar la lista
+        run: |
+          if git diff --quiet -- tiktok/videos.json && [ -z "$(git ls-files --others -- tiktok/videos.json)" ]; then
+            echo "Sin cambios."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tiktok/videos.json
+          git commit -m "TikTok: actualizar lista de videos"
+          git push
+
+      - name: Avisar de los videos nuevos
+        uses: actions/github-script@v7
+        env:
+          NUEVOS: ${{ runner.temp }}/nuevos.json
+        with:
+          script: |
+            const fs = require('fs');
+            const nuevos = JSON.parse(fs.readFileSync(process.env.NUEVOS, 'utf8'));
+            if (!nuevos.length) return core.info('No hay videos nuevos.');
+
+            const { owner, repo } = context.repo;
+            try {
+              await github.rest.issues.createLabel({ owner, repo, name: 'tiktok', color: 'fe2c55',
+                description: 'Video nuevo en TikTok' });
+            } catch (e) { if (e.status !== 422) throw e; }  // 422 = ya existe
+
+            const pagina = `https://${owner}.github.io/${repo}/tiktok/`;
+            for (const v of nuevos) {
+              const titulo = (v.titulo || 'Sin descripción').slice(0, 90);
+              const fecha = v.fecha ? new Date(v.fecha * 1000).toLocaleString('es-PE',
+                { timeZone: 'America/Lima', dateStyle: 'long', timeStyle: 'short' }) : '';
+              await github.rest.issues.create({
+                owner, repo, labels: ['tiktok'],
+                title: `🎬 Nuevo video: ${titulo}`,
+                body: [
+                  `**[▶ Ver en TikTok](${v.url})**`,
+                  '',
+                  v.titulo ? `> ${v.titulo}` : '',
+                  '',
+                  fecha ? `Subido: ${fecha} (hora de Lima)` : '',
+                  `Todos los videos: ${pagina}`,
+                  '',
+                  '_Cierra este aviso cuando lo hayas visto._',
+                ].filter((l, i, a) => l || a[i - 1]).join('\n'),
+              });
+              core.info(`Aviso creado: ${v.url}`);
+            }
